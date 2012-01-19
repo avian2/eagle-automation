@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e
+
+EAGLE="/home/avian/local/eagle-5.11.0/bin/eagle"
+VIEWER="gthumb"
+DPI=600
+
+A_BRD=$1
+B_BRD=$2
+
+function to_png {
+	BRD=$1
+	PNG=$2
+	SCR=`tempfile --suffix=".scr"`
+
+	cat > "$SCR" <<END
+BRD:
+DISPLAY ALL
+RATSNEST
+DISPLAY None
+DISPLAY Bottom Pads Vias
+EXPORT IMAGE $PNG MONOCHROME $DPI;
+QUIT
+
+SCH:
+DISPLAY ALL
+EXPORT IMAGE $PNG MONOCHROME $DPI;
+QUIT
+END
+
+	# hack
+	rm -f "$PNG"
+
+	"$EAGLE" "-S$SCR" "$BRD" 
+
+	rm "$SCR"
+}
+
+A_PNG=`tempfile --suffix=".png"`
+B_PNG=`tempfile --suffix=".png"`
+C_PNG=`tempfile --suffix=".png"`
+
+to_png "$A_BRD" "$A_PNG"
+to_png "$B_BRD" "$B_PNG"
+
+rm "$C_PNG"
+
+composite -stereo 0 "$B_PNG" "$A_PNG" "$C_PNG"
+
+rm "$A_PNG" "$B_PNG" 
+
+"$VIEWER" "$C_PNG"
+
+rm "$C_PNG"
