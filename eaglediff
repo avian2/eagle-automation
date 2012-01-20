@@ -7,7 +7,7 @@ import tempfile
 from PIL import Image, ImageOps, ImageChops 
 
 EAGLE = "eagle"
-DPI = 300
+DPI = 400
 
 def to_png(path):
 
@@ -31,7 +31,6 @@ def to_png(path):
 	layers = layers_cfg[ext]
 
 	workdir = tempfile.mkdtemp()
-	#workdir = "/tmp/a"
 
 	scrpath = os.path.join(workdir, "export.scr")
 	scr = open(scrpath, "w")
