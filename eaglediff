@@ -6,7 +6,7 @@ import sys
 import tempfile
 from PIL import Image, ImageOps, ImageChops 
 
-EAGLE = "/home/avian/local/eagle-5.11.0/bin/eagle"
+EAGLE = "eagle"
 DPI = 300
 
 def to_png(path):
