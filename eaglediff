@@ -1,55 +1,95 @@
-#!/bin/bash
+#!/usr/bin/python
 
-set -e
+import os
+import subprocess
+import sys
+import tempfile
+from PIL import Image, ImageOps, ImageChops 
 
-EAGLE="/home/avian/local/eagle-5.11.0/bin/eagle"
-VIEWER="gthumb"
-DPI=600
+EAGLE = "/home/avian/local/eagle-5.11.0/bin/eagle"
+DPI = 300
 
-A_BRD=$1
-B_BRD=$2
+def to_png(path):
 
-function to_png {
-	BRD=$1
-	PNG=$2
-	SCR=`tempfile --suffix=".scr"`
+	ext = path.split('.')[-1]
 
-	cat > "$SCR" <<END
-BRD:
-DISPLAY ALL
-RATSNEST
-DISPLAY None
-DISPLAY Bottom Pads Vias
-EXPORT IMAGE $PNG MONOCHROME $DPI;
-QUIT
+	layers_cfg = {	'brd': [
+				"tPlace tNames tDocu",
+				"tCream",
+				"tStop",
+				"Top Pads Vias",
+				"Bottom Pads Vias",
+				"bStop",
+				"bCream",
+				"bPlace bNames bDocu",
+			],
+			'sch': [
+				"ALL",
+			],
+		}
 
-SCH:
-DISPLAY ALL
-EXPORT IMAGE $PNG MONOCHROME $DPI;
-QUIT
-END
+	layers = layers_cfg[ext]
 
-	# hack
-	rm -f "$PNG"
+	workdir = tempfile.mkdtemp()
+	#workdir = "/tmp/a"
 
-	"$EAGLE" "-S$SCR" "$BRD" 
+	scrpath = os.path.join(workdir, "export.scr")
+	scr = open(scrpath, "w")
 
-	rm "$SCR"
-}
+	scr.write("%s:\nDISPLAY ALL\n" % (ext.upper()))
 
-A_PNG=`tempfile --suffix=".png"`
-B_PNG=`tempfile --suffix=".png"`
-C_PNG=`tempfile --suffix=".png"`
+	if ext == "brd":
+		scr.write("RATSNEST\n")
 
-to_png "$A_BRD" "$A_PNG"
-to_png "$B_BRD" "$B_PNG"
+	pngs = []
 
-rm "$C_PNG"
+	for layer in layers:
+		png = "".join(layer.split()).lower() + ".png"
+		png = os.path.join(workdir, png)
+		pngs.append(png)
 
-composite -stereo 0 "$B_PNG" "$A_PNG" "$C_PNG"
+		scr.write("DISPLAY None\nDISPLAY %s\n" % (layer,))
+		scr.write("EXPORT IMAGE %s MONOCHROME %d\n" % (png, DPI))
 
-rm "$A_PNG" "$B_PNG" 
+	scr.write("QUIT\n")
+	scr.close()
 
-"$VIEWER" "$C_PNG"
+	cmd = [EAGLE, "-S" + scrpath, path]
+	subprocess.call(cmd)
 
-rm "$C_PNG"
+	os.unlink(scrpath)
+
+	oim = None
+	for i, png in enumerate(pngs):
+		im = Image.open(png).convert("L")
+		if oim is None:
+			oim = im
+		else:
+			oim = Image.blend(oim, im, 1.0/(1.0+i))
+
+		os.unlink(png)
+
+	os.rmdir(workdir)
+
+	return oim
+
+def main():
+	try:
+		a_im = to_png(sys.argv[1])
+		b_im = to_png(sys.argv[2])
+	except KeyError:
+		return
+
+	added = ImageOps.autocontrast(ImageChops.subtract(b_im, a_im), 0)
+	deled = ImageOps.autocontrast(ImageChops.subtract(a_im, b_im), 0)
+	same = Image.blend(a_im, b_im, 0.5)
+
+	deled = ImageOps.colorize(deled, "#000", "#f00")
+	added = ImageOps.colorize(added, "#000", "#00f")
+	same = ImageOps.colorize(same, "#000", "#777")
+
+	im = ImageChops.add(ImageChops.add(added, deled), same)
+
+	im.show()
+
+main()
