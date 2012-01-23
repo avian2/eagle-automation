@@ -1,0 +1,32 @@
+#!/usr/bin/python
+
+import os
+from eagle_automation.config import *
+from eagle_automation.export import	EaglePNGExport, \
+					EaglePDFExport, \
+					EagleGerberExport, \
+					EagleExcellonExport
+import sys
+
+out_types = {	'png': EaglePNGExport,
+		'pdf': EaglePDFExport,
+		'gerber': EagleGerberExport,
+		'excellon': EagleExcellonExport }
+
+def main():
+	in_path, out_type = sys.argv[1:3]
+
+	layers = []
+	out_paths = []
+	for arg in sys.argv[3:]:
+		out_path, layer_name = arg.split(":")
+		layer = LAYERS[layer_name]
+
+		layers.append(layer)
+		out_paths.append(out_path)
+
+	export_class = out_types[out_type]
+
+	export_class().export(in_path, layers, out_paths)
+
+main()

@@ -58,7 +58,7 @@ class EaglePDFExport(EagleScriptExport):
 
 		for layer, out_path in zip(layers, out_paths):
 
-			ll = set(layer['layers']) + set(DOCUMENT_LAYERS)
+			ll = set(layer['layers']) | set(DOCUMENT_LAYERS)
 			script.write("DISPLAY None\n")
 			script.write("DISPLAY %s\n" % (' '.join(ll),))
 			script.write("PRINT FILE %s BLACK SOLID ;\n" % (out_path,))
@@ -77,13 +77,13 @@ class EagleCAMExport:
 
 		for layer, out_path in zip(layers, out_paths):
 			options = ["-X", "-d" + self.DEVICE, "-o"  + out_path]
-			if layer['mirror']:
+			if layer.get('mirror'):
 				options.append("-m")
-			cmd = [EAGLE] + options + [in_path, layer['layers']]
+			cmd = [EAGLE] + options + [in_path] + layer['layers']
 			subprocess.call(cmd)
 
 class EagleGerberExport(EagleCAMExport):
 	DEVICE = "GERBER_RS274X"
 
-class EagleExcellon(EagleCAMExport):
+class EagleExcellonExport(EagleCAMExport):
 	DEVICE = "EXCELLON"
