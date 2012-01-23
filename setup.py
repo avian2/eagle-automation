@@ -13,5 +13,5 @@ setup(name='eagle_automation',
       packages = [ 'eagle_automation' ],
       provides = [ 'eagle_automation' ],
 
-      scripts = ['eaglediff', 'eagleexport'],
+      scripts = ['eaglediff', 'eagleexport', 'eagledrl'],
 )
