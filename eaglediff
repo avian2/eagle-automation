@@ -40,7 +40,17 @@ def to_png(in_path):
 
 	return oim
 
+def usage():
+	print """eaglediff, visually compare CadSoft Eagle files
+Copyright (C) 2012 by Tomaz Solc <tomaz.solc@tablix.org>
+
+USAGE: eaglediff from-file to-file"""
+	sys.exit(1)
+
 def main():
+	if len(sys.argv) != 3:
+		usage()
+
 	try:
 		a_im = to_png(sys.argv[1])
 		b_im = to_png(sys.argv[2])
