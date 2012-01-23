@@ -17,7 +17,7 @@ def to_png(in_path):
 		out_paths = [	os.path.join(workdir, layer + '.png')
 				for layer in LAYERS.iterkeys() ]
 	elif extension == 'sch':
-		layers = ['ALL']
+		layers = [{'layers': ['ALL']}]
 		out_paths = ['all.png']
 	else:
 		os.rmdir(workdir)
