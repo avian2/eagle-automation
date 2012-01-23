@@ -21,6 +21,14 @@ class EagleScriptExport:
 
 		script.close()
 
+		for out_path in out_paths:
+			# to stop Eagle trowing up dialogs that
+			# files already exist
+			try:
+				os.unlink(out_path)
+			except OSError:
+				pass
+
 		cmd = [EAGLE, "-S" + script_path, in_path]
 		subprocess.call(cmd)
 
