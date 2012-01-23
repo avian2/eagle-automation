@@ -1,72 +1,41 @@
 #!/usr/bin/python
 
 import os
+from eagle_automation.config import *
+from eagle_automation.export import BadExtension, EaglePNGExport
 import subprocess
 import sys
 import tempfile
 from PIL import Image, ImageOps, ImageChops 
 
-EAGLE = "eagle"
-DPI = 400
-
-def to_png(path):
-
-	ext = path.split('.')[-1]
-
-	layers_cfg = {	'brd': [
-				"tPlace tNames tDocu",
-				"tCream",
-				"tStop",
-				"Top Pads Vias",
-				"Bottom Pads Vias",
-				"bStop",
-				"bCream",
-				"bPlace bNames bDocu",
-			],
-			'sch': [
-				"ALL",
-			],
-		}
-
-	layers = layers_cfg[ext]
+def to_png(in_path):
 
 	workdir = tempfile.mkdtemp()
 
-	scrpath = os.path.join(workdir, "export.scr")
-	scr = open(scrpath, "w")
+	extension = in_path.split('.')[-1].lower()
+	if extension == 'brd':
+		layers = LAYERS.values()
+		out_paths = [	os.path.join(workdir, layer + '.png')
+				for layer in LAYERS.iterkeys() ]
+	elif extension == 'sch':
+		layers = ['ALL']
+		out_paths = ['all.png']
+	else:
+		os.rmdir(workdir)
+		raise BadExtension
 
-	scr.write("%s:\nDISPLAY ALL\n" % (ext.upper()))
-
-	if ext == "brd":
-		scr.write("RATSNEST\n")
-
-	pngs = []
-
-	for layer in layers:
-		png = "".join(layer.split()).lower() + ".png"
-		png = os.path.join(workdir, png)
-		pngs.append(png)
-
-		scr.write("DISPLAY None\nDISPLAY %s\n" % (layer,))
-		scr.write("EXPORT IMAGE %s MONOCHROME %d\n" % (png, DPI))
-
-	scr.write("QUIT\n")
-	scr.close()
-
-	cmd = [EAGLE, "-S" + scrpath, path]
-	subprocess.call(cmd)
-
-	os.unlink(scrpath)
+	export = EaglePNGExport(workdir=workdir)
+	export.export(in_path, layers, out_paths)
 
 	oim = None
-	for i, png in enumerate(pngs):
-		im = Image.open(png).convert("L")
+	for i, out_path in enumerate(out_paths):
+		im = Image.open(out_path).convert("L")
 		if oim is None:
 			oim = im
 		else:
 			oim = Image.blend(oim, im, 1.0/(1.0+i))
 
-		os.unlink(png)
+		os.unlink(out_path)
 
 	os.rmdir(workdir)
 
@@ -76,7 +45,8 @@ def main():
 	try:
 		a_im = to_png(sys.argv[1])
 		b_im = to_png(sys.argv[2])
-	except KeyError:
+	except BadExtension:
+		print "Skipping: not a board or schematic"
 		return
 
 	added = ImageOps.autocontrast(ImageChops.subtract(b_im, a_im), 0)
