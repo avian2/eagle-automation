@@ -1,0 +1,89 @@
+Eagle automation
+================
+
+These Python scripts make open hardware development a bit more convenient
+if you are using the CadSoft Eagle package and are used to the development
+procedures open source software projects usually follow.
+
+eaglediff   - commandline visual diff tool for schematics and board layouts
+              that is compatible with git-difftool.
+
+eagleexport - tool that exposes a unified commandline interface to various
+              different ways Eagle offers for exporting artwork.
+
+eagledrl    - generate .drl files from .dri without any annoying dialogs.
+
+
+
+Installation
+============
+
+Run:
+
+$ python setup.py install
+$ git config --global --add difftool.eaglediff.cmd 'eaglediff $LOCAL $REMOTE'
+
+Note these scripts have only been tested using Eagle 5.11.0.
+
+
+
+Usage
+=====
+
+You can find a Makefile in the skel/ subdirectory that shows how you can
+automatically build your project's documentation using make from .sch and
+.brd files.
+
+To show differences to the design that have not yet been committed:
+
+$ git difftool -t eaglediff
+
+To show differences between two tagged versions:
+
+$ git difftool -t eaglediff v1.0..v2.0
+
+Note that Eagle windows will blink on and off during the use of these
+tools. Try not to touch anything while they are doing that. 
+
+Also, Eagle sometimes behaves weirdly if more than one instance of it is
+running: it might occasionally stop in the middle of a script or throw a
+random error dialog. Because of the closed nature of this software there is
+nothing that can be done about that. If that bothers you, consider
+switching to a free EDA tool.
+
+
+
+Hacking
+=======
+
+These tools work with physical layers (for instance, the artwork that will
+actually be etched into copper). One physical layer can consist of one or
+more logical Eagle layers. E.g. "topcopper" includes "Top, Pads, Vias"
+Eagle layers. 
+
+The mapping between physical layers and logical Eagle layers and other
+tweakable settings are in eagle_automation/config.py.
+
+The settings should work for most simple one- or two-layer boards. In the
+future there will be a way to set these on a per-project basis.
+
+
+
+License
+=======
+
+Eagle automation, set of commandline tools for use with CadSoft Eagle
+Copyright (C) 2012  Tomaz Solc <tomaz.solc@tablix.org>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

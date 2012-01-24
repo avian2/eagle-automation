@@ -15,7 +15,7 @@ out_types = {	'png': EaglePNGExport,
 
 def usage():
 	print """eagleexport, export layers from CadSoft Eagle files
-Copyright (C) 2012 by Tomaz Solc <tomaz.solc@tablix.org>
+Copyright (C) 2012  Tomaz Solc <tomaz.solc@tablix.org>
 
 USAGE: eagleexport input-file type output-file:layer ...
 

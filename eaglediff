@@ -42,7 +42,7 @@ def to_png(in_path):
 
 def usage():
 	print """eaglediff, visually compare CadSoft Eagle files
-Copyright (C) 2012 by Tomaz Solc <tomaz.solc@tablix.org>
+Copyright (C) 2012  Tomaz Solc <tomaz.solc@tablix.org>
 
 USAGE: eaglediff from-file to-file"""
 	sys.exit(1)
