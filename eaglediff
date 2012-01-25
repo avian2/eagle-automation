@@ -53,9 +53,14 @@ def main():
 
 	try:
 		a_im = to_png(sys.argv[1])
+	except BadExtension:
+		print "%s: skipping, not a board or schematic" % sys.argv[1]
+		return
+
+	try:
 		b_im = to_png(sys.argv[2])
 	except BadExtension:
-		print "Skipping: not a board or schematic"
+		print "%s: skipping, not a board or schematic" % sys.argv[2]
 		return
 
 	added = ImageOps.autocontrast(ImageChops.subtract(b_im, a_im), 0)
