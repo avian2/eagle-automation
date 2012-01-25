@@ -10,6 +10,9 @@ class EagleScriptExport:
 		self.workdir = workdir
 
 	def export(self, in_path, layers, out_paths):
+
+		open(in_path, "rb").close()
+
 		workdir = self.workdir or tempfile.mkdtemp()
 
 		script_path = os.path.join(workdir, "export.scr")
@@ -78,6 +81,8 @@ class EagleCAMExport:
 		pass
 
 	def export(self, in_path, layers, out_paths):
+
+		open(in_path, "rb").close()
 
 		extension = in_path.split('.')[-1].lower()
 		if extension != 'brd':
