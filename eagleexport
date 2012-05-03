@@ -39,13 +39,24 @@ def main():
 		try:
 			out_path, layer_name = arg.split(":")
 		except ValueError:
-			print "Missing :"
-			sys.exit(1)
+			out_path = arg
+			layer_name = None
 
-		try:
-			layer = LAYERS[layer_name]
-		except KeyError:
-			print "Unknown layer: " + layer_name
+		extension = in_path.split('.')[-1].lower()
+		if extension == 'brd':
+			if layer_name is None:
+				print "Layer name required when exporting brd files"
+				sys.exit(1)
+
+			try:
+				layer = LAYERS[layer_name]
+			except KeyError:
+				print "Unknown layer: " + layer_name
+				sys.exit(1)
+		elif extension == 'sch':
+			layer = {'layers': ['ALL']}
+		else:
+			print "Bad extension %s: Eagle requires file names ending in sch or brd" % extension
 			sys.exit(1)
 
 		layers.append(layer)
