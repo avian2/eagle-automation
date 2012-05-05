@@ -53,6 +53,18 @@ switching to a free EDA tool.
 
 
 
+Known problems
+==============
+
+When exporting to PDF using eagleexport, default print settings are used.
+To set them, go to File -> Print setup, make changes, then quit Eagle so
+that the settings are saved.
+
+Exporting and diffing multi-page schematics doesn't work well - only the
+one page is used.
+
+
+
 Hacking
 =======
 
