@@ -23,7 +23,8 @@ GERBER_FILES = \
 	$(PROJECT).stc \
 	$(PROJECT).sts \
 	$(PROJECT).crc \
-	$(PROJECT).crs
+	$(PROJECT).crs \
+	$(PROJECT).oln
 
 EXCELLON_FILES = \
 	$(PROJECT).drd \
@@ -60,6 +61,9 @@ $(PROJECT)-assembly.pdf: $(ASSEMBLY_FILES)
 
 %.crs: %.brd
 	eagleexport $< gerber $@:bottompaste
+
+%.oln: %.brd
+	eagleexport $< gerber $@:outline
 
 %.drd %.dri: %.brd
 	eagleexport $< excellon $@:drills

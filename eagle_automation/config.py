@@ -35,6 +35,10 @@ LAYERS = {
 		'mirror': True,
 	},
 
+	'outline': {
+		'layers': ['Milling'],
+	},
+
 	'measures': {
 		'layers': ['LayerStackup', 'DrillLegend', 'Measures'],
 	},
