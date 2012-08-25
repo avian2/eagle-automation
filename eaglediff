@@ -63,6 +63,20 @@ def main():
 		print "%s: skipping, not a board or schematic" % sys.argv[2]
 		return
 
+	# make the sizes equal
+	# if a sheet contains the filename, it is updated with the temporary name
+	# and may thus change the size of the image
+	width  = max( (a_im.size[0], b_im.size[0]) )
+	height = max( (a_im.size[1], b_im.size[1]) )
+	a_im2 = Image.new( "L", (width,height) )
+	a_im2.paste( a_im, (0,0) )
+	a_im = a_im2
+	a_im2 = None
+	b_im2 = Image.new( "L", (width,height) )
+	b_im2.paste( b_im, (0,0) )
+	b_im = b_im2
+	b_im2 = None
+
 	added = ImageOps.autocontrast(ImageChops.subtract(b_im, a_im), 0)
 	deled = ImageOps.autocontrast(ImageChops.subtract(a_im, b_im), 0)
 	same = Image.blend(a_im, b_im, 0.5)
