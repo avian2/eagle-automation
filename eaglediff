@@ -18,7 +18,7 @@ def to_png(in_path):
 				for layer in LAYERS.iterkeys() ]
 	elif extension == 'sch':
 		layers = [{'layers': ['ALL']}]
-		out_paths = ['all.png']
+		out_paths = [os.path.join(workdir, 'all.png')]
 	else:
 		os.rmdir(workdir)
 		raise BadExtension
