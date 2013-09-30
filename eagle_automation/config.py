@@ -1,4 +1,8 @@
 LAYERS = {
+	'topassembly': {
+		'layers': ['tPlace', 'tNames', 'tDocu'],
+	},
+
 	'topsilk': {
 		'layers': ['tPlace', 'tNames'],
 	},
@@ -32,6 +36,11 @@ LAYERS = {
 
 	'bottomsilk': {
 		'layers': ['bPlace', 'bNames'],
+		'mirror': True,
+	},
+
+	'bottomassembly': {
+		'layers': ['bPlace', 'bNames', 'bDocu'],
 		'mirror': True,
 	},
 
