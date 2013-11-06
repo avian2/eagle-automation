@@ -5,13 +5,15 @@ from eagle_automation.config import *
 from eagle_automation.export import	EaglePNGExport, \
 					EaglePDFExport, \
 					EagleGerberExport, \
-					EagleExcellonExport
+					EagleExcellonExport, \
+					EagleMountSMDExport
 import sys
 
 out_types = {	'png': EaglePNGExport,
 		'pdf': EaglePDFExport,
 		'gerber': EagleGerberExport,
-		'excellon': EagleExcellonExport }
+		'excellon': EagleExcellonExport,
+		'mountsmd': EagleMountSMDExport }
 
 def usage():
 	print """eagleexport, export layers from CadSoft Eagle files

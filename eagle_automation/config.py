@@ -1,6 +1,7 @@
 LAYERS = {
 	'topassembly': {
 		'layers': ['tPlace', 'tNames', 'tDocu'],
+		'pp_id': 1,
 	},
 
 	'topsilk': {
@@ -42,6 +43,7 @@ LAYERS = {
 	'bottomassembly': {
 		'layers': ['bPlace', 'bNames', 'bDocu'],
 		'mirror': True,
+		'pp_id': 16,
 	},
 
 	'outline': {
