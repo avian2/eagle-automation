@@ -28,9 +28,13 @@ GERBER_FILES = \
 
 EXCELLON_FILES = \
 	$(PROJECT).drd \
-	$(PROJECT).drl \
+	$(PROJECT).drl
 
-all: $(PROJECT)-assembly.pdf $(GERBER_FILES) $(EXCELLON_FILES)
+PP_FILES = \
+	$(PROJECT).mnt \
+	$(PROJECT).mnb
+
+all: $(PROJECT)-assembly.pdf $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
 
 $(ASSEMBLY_FILES): $(PROJECT).brd
 	eagleexport $< pdf $(ASSEMBLY_EXPORT)
@@ -68,10 +72,16 @@ $(PROJECT)-assembly.pdf: $(ASSEMBLY_FILES)
 %.drd %.dri: %.brd
 	eagleexport $< excellon $@:drills
 
+%.mnt: %.brd
+	eagleexport $< mountsmd $@:topassembly
+
+%.mnb: %.brd
+	eagleexport $< mountsmd $@:bottomassembly
+
 %.drl: %.dri
 	eagledrl < $< > $@
 
 clean:
-	rm -f *.pdf *.dri $(GERBER_FILES) $(EXCELLON_FILES)
+	rm -f *.pdf *.dri $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
 
 .PHONY: clean
