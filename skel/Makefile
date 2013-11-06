@@ -87,6 +87,6 @@ $(DIST): $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
 	eagledrl < $< > $@
 
 clean:
-	rm -f *.pdf *.dri $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES) $(DIST)
+	rm -f *.pdf *.dri *.gpi $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES) $(DIST)
 
 .PHONY: clean
