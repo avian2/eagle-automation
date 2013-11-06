@@ -13,16 +13,9 @@ class EagleScriptExport:
 
 		open(in_path, "rb").close()
 
-		workdir = self.workdir or tempfile.mkdtemp()
-
-		script_path = os.path.join(workdir, "export.scr")
-		script = open(script_path, "w")
-
 		extension = in_path.split('.')[-1].lower()
 
-		self.write_script(script, extension, layers, out_paths)
-
-		script.close()
+		script = self.write_script(extension, layers, out_paths)
 
 		for out_path in out_paths:
 			# to stop Eagle trowing up dialogs that
@@ -32,49 +25,59 @@ class EagleScriptExport:
 			except OSError:
 				pass
 
-		cmd = [EAGLE, "-S" + script_path, in_path]
+		script += ['QUIT']
+
+		script_string = ';'.join(script)
+
+		cmd = [EAGLE, "-C" + script_string, in_path]
 		subprocess.call(cmd)
 
-		os.unlink(script_path)
-
-		if not self.workdir:
-			os.rmdir(workdir)
-
 class EaglePNGExport(EagleScriptExport):
-	def write_script(self, script, extension, layers, out_paths):
+	def write_script(self, extension, layers, out_paths):
+
+		script = []
 
 		if extension == 'brd':
-			script.write("BRD:\nDISPLAY ALL\nRATSNEST\n")
+			script += [	"DISPLAY ALL",
+					"RATSNEST"
+				]
 		elif extension == 'sch':
-			script.write("SCH:\n")
+			pass
 		else:
 			raise BadExtension
 
 		for layer, out_path in zip(layers, out_paths):
 			assert out_path.endswith(".png")
 
-			script.write("DISPLAY None\n")
-			script.write("DISPLAY %s\n" % (' '.join(layer['layers']),))
-			script.write("EXPORT IMAGE %s MONOCHROME %d\n" % (out_path, DPI))
+			script += [	"DISPLAY None",
+					"DISPLAY %s" % (' '.join(layer['layers']),),
+					"EXPORT IMAGE %s MONOCHROME %d" % (out_path, DPI)
+				]
 
-		script.write("QUIT\n")
+		return script
 
 class EaglePDFExport(EagleScriptExport):
-	def write_script(self, script, extension, layers, out_paths):
+	def write_script(self, extension, layers, out_paths):
+
+		script = []
 
 		if extension == 'brd':
-			script.write("BRD:\nDISPLAY ALL\nRATSNEST\n")
+			script += [	"DISPLAY ALL",
+					"RATSNEST"
+				]
 		else:
 			raise BadExtension
 
 		for layer, out_path in zip(layers, out_paths):
 
 			ll = set(layer['layers']) | set(DOCUMENT_LAYERS)
-			script.write("DISPLAY None\n")
-			script.write("DISPLAY %s\n" % (' '.join(ll),))
-			script.write("PRINT FILE %s BLACK SOLID ;\n" % (out_path,))
 
-		script.write("QUIT\n")
+			script += [	"DISPLAY None",
+					"DISPLAY %s" % (' '.join(ll),),
+					"PRINT FILE %s BLACK SOLID" % (out_path,),
+				]
+
+		return script
 
 class EagleCAMExport:
 	def __init__(self, workdir=None):
