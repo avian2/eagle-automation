@@ -34,13 +34,18 @@ PP_FILES = \
 	$(PROJECT).mnt \
 	$(PROJECT).mnb
 
-all: $(PROJECT)-assembly.pdf $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
+DIST = $(PROJECT)-gerber.zip
+
+all: $(PROJECT)-assembly.pdf $(DIST)
 
 $(ASSEMBLY_FILES): $(PROJECT).brd
 	eagleexport $< pdf $(ASSEMBLY_EXPORT)
 
 $(PROJECT)-assembly.pdf: $(ASSEMBLY_FILES)
 	pdftk $^ cat output $@
+
+$(DIST): $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
+	zip $@ $^
 
 %.cmp: %.brd
 	eagleexport $< gerber $@:topcopper
@@ -82,6 +87,6 @@ $(PROJECT)-assembly.pdf: $(ASSEMBLY_FILES)
 	eagledrl < $< > $@
 
 clean:
-	rm -f *.pdf *.dri $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
+	rm -f *.pdf *.dri $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES) $(DIST)
 
 .PHONY: clean
