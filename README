@@ -1,17 +1,29 @@
 Eagle automation
 ================
 
-These Python scripts make open hardware development a bit more convenient
-if you are using the CadSoft Eagle package and are used to the development
-procedures open source software projects usually follow.
+Eagle automation provides a more Unix-like and scriptable interface to the
+CadSoft Eagle electronics design package. It is meant to make open hardware
+development a bit more convenient for anyone that is used to the procedures
+usually employed by open source software projects (for example using source
+control tools and one-step builds).
 
-eaglediff   - commandline visual diff tool for schematics and board layouts
-              that is compatible with git-difftool.
+This repository currently contains the following:
 
-eagleexport - tool that exposes a unified commandline interface to various
-              different ways Eagle offers for exporting artwork.
+eaglediff     - Commandline visual diff tool for schematics and board layouts
+                that is compatible with git-difftool.
 
-eagledrl    - generate .drl files from .dri without any annoying dialogs.
+eagleexport   - A tool that exposes a unified commandline interface to various
+                different ways Eagle offers for exporting artwork.
+
+                It currently supports exporting Eagle files to Gerber, PDF and
+                PNG formats, generating Excellon drill files and files needed
+                for pick & place machines.
+
+eagledrl      - Generate .drl files from .dri without any annoying dialogs.
+
+skel/Makefile - An example Makefile that demonstrates how fabrication and
+                assembly documentation for a project can be generated
+                automatically with GNU Make.
 
 
 
