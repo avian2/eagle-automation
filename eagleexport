@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-from eagle_automation import config
+from eagle_automation.config import config
 from eagle_automation.export import	EaglePNGExport, \
 					EaglePDFExport, \
 					EagleGerberExport, \

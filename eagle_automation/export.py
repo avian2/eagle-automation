@@ -1,4 +1,4 @@
-from eagle_automation import config
+from eagle_automation.config import config
 import os
 import subprocess
 import tempfile
