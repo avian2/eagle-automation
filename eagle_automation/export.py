@@ -1,4 +1,4 @@
-from eagle_automation.config import *
+from eagle_automation import config
 import os
 import subprocess
 import tempfile
@@ -29,7 +29,7 @@ class EagleScriptExport:
 
 		script_string = ';'.join(script)
 
-		cmd = [EAGLE, "-C" + script_string, in_path]
+		cmd = [config.EAGLE, "-C" + script_string, in_path]
 		subprocess.call(cmd)
 
 		self.clean()
@@ -56,7 +56,7 @@ class EaglePNGExport(EagleScriptExport):
 
 			script += [	"DISPLAY None",
 					"DISPLAY %s" % (' '.join(layer['layers']),),
-					"EXPORT IMAGE %s MONOCHROME %d" % (out_path, DPI)
+					"EXPORT IMAGE %s MONOCHROME %d" % (out_path, config.DPI)
 				]
 
 		return script
@@ -75,7 +75,7 @@ class EaglePDFExport(EagleScriptExport):
 
 		for layer, out_path in zip(layers, out_paths):
 
-			ll = set(layer['layers']) | set(DOCUMENT_LAYERS)
+			ll = set(layer['layers']) | set(config.DOCUMENT_LAYERS)
 
 			script += [	"DISPLAY None",
 					"DISPLAY %s" % (' '.join(ll),),
@@ -180,7 +180,7 @@ class EagleCAMExport:
 			options = ["-X", "-d" + self.DEVICE, "-o"  + out_path]
 			if layer.get('mirror'):
 				options.append("-m")
-			cmd = [EAGLE] + options + [in_path] + layer['layers']
+			cmd = [config.EAGLE] + options + [in_path] + layer['layers']
 			subprocess.call(cmd)
 
 class EagleGerberExport(EagleCAMExport):
