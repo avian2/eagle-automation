@@ -1,66 +1,22 @@
-LAYERS = {
-	'topassembly': {
-		'layers': ['tPlace', 'tNames', 'tDocu'],
-		'pp_id': 1,
-	},
+import os
 
-	'topsilk': {
-		'layers': ['tPlace', 'tNames'],
-	},
-	
-	'toppaste': {
-		'layers': ['tCream'],
-	},
+CONFIG_PATHS = [
+	os.path.join(os.path.dirname(__file__), 'default.conf'),
+	'/etc/eagle_automation.conf',
+	os.path.join(os.environ.get('HOME', '/'), '.config/eagle_automation.conf'),
+	'eagle_automation.conf',
+]
 
-	'topmask': {
-		'layers': ['tStop'],
-	},
+class Config: pass
 
-	'topcopper': {
-		'layers': ['Top', 'Pads', 'Vias'],
-	},
+def _get_config():
 
-	'bottomcopper': {
-		'layers': ['Bottom', 'Pads', 'Vias'],
-		'mirror': True,
-	},
+	config = Config()
 
-	'bottommask': {
-		'layers': ['bStop'],
-		'mirror': True,
-	},
-	
-	'bottompaste': {
-		'layers': ['bCream'],
-		'mirror': True,
-	},
+	for path in CONFIG_PATHS:
+		if os.path.exists(path):
+			execfile(path, config.__dict__)
 
-	'bottomsilk': {
-		'layers': ['bPlace', 'bNames'],
-		'mirror': True,
-	},
+	return config
 
-	'bottomassembly': {
-		'layers': ['bPlace', 'bNames', 'bDocu'],
-		'mirror': True,
-		'pp_id': 16,
-	},
-
-	'outline': {
-		'layers': ['Milling'],
-	},
-
-	'measures': {
-		'layers': ['LayerStackup', 'DrillLegend', 'Measures'],
-	},
-
-	'drills': {
-		'layers': ['Drills', 'Holes'],
-	},
-}
-
-DOCUMENT_LAYERS = ['Dimension', 'Document']
-
-EAGLE = "eagle"
-
-DPI = 400
+config = _get_config()

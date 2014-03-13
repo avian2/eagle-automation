@@ -13,5 +13,7 @@ setup(name='eagle_automation',
       packages = [ 'eagle_automation' ],
       provides = [ 'eagle_automation' ],
 
+      data_files = [('lib/python/eagle_automation', ['eagle_automation/default.conf'])],
+
       scripts = ['eaglediff', 'eagleexport', 'eagledrl'],
 )

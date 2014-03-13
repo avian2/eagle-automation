@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-from eagle_automation.config import *
+from eagle_automation.config import config
 from eagle_automation.export import	EaglePNGExport, \
 					EaglePDFExport, \
 					EagleGerberExport, \
@@ -25,7 +25,7 @@ type can be any of %s
 
 layer can be any of %s""" % (
 		', '.join(out_types.iterkeys()),
-		', '.join(LAYERS.iterkeys()) )
+		', '.join(config.LAYERS.iterkeys()) )
 
 	sys.exit(1)
 
@@ -51,7 +51,7 @@ def main():
 				sys.exit(1)
 
 			try:
-				layer = LAYERS[layer_name]
+				layer = config.LAYERS[layer_name]
 			except KeyError:
 				print "Unknown layer: " + layer_name
 				sys.exit(1)

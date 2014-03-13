@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-from eagle_automation.config import *
+from eagle_automation.config import config
 from eagle_automation.export import BadExtension, EaglePNGExport
 import sys
 import tempfile
@@ -13,9 +13,9 @@ def to_png(in_path):
 
 	extension = in_path.split('.')[-1].lower()
 	if extension == 'brd':
-		layers = LAYERS.values()
+		layers = config.LAYERS.values()
 		out_paths = [	os.path.join(workdir, layer + '.png')
-				for layer in LAYERS.iterkeys() ]
+				for layer in config.LAYERS.iterkeys() ]
 	elif extension == 'sch':
 		layers = [{'layers': ['ALL']}]
 		out_paths = [os.path.join(workdir, 'all.png')]
