@@ -38,6 +38,11 @@ class EagleScriptExport:
 		pass
 
 class EaglePNGExport(EagleScriptExport):
+	_page = 1
+
+	def set_page(self, page):
+		self._page = page
+
 	def write_script(self, extension, layers, out_paths):
 
 		script = []
@@ -47,7 +52,7 @@ class EaglePNGExport(EagleScriptExport):
 					"RATSNEST"
 				]
 		elif extension == 'sch':
-			pass
+			script += [	"EDIT .s%d" % self._page ]
 		else:
 			raise BadExtension
 

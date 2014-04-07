@@ -6,8 +6,9 @@ from eagle_automation.export import BadExtension, EaglePNGExport
 import sys
 import tempfile
 from PIL import Image, ImageOps, ImageChops 
+from optparse import OptionParser
 
-def to_png(in_path):
+def to_png(in_path, page):
 
 	workdir = tempfile.mkdtemp()
 
@@ -24,6 +25,7 @@ def to_png(in_path):
 		raise BadExtension
 
 	export = EaglePNGExport(workdir=workdir)
+	export.set_page(page)
 	export.export(in_path, layers, out_paths)
 
 	oim = None
@@ -41,24 +43,35 @@ def to_png(in_path):
 	return oim
 
 def usage():
-	print """eaglediff, visually compare CadSoft Eagle files
-Copyright (C) 2013  Tomaz Solc <tomaz.solc@tablix.org>
-
-USAGE: eaglediff from-file to-file"""
 	sys.exit(1)
 
 def main():
-	if len(sys.argv) != 3:
-		usage()
+	usage = """eaglediff, visually compare CadSoft Eagle files
+Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+
+USAGE: %prog [options] from-file to-file"""
+
+	parser = OptionParser(usage=usage)
+	parser.add_option("-p", "--page", dest="page", type=int, default=1,
+			metavar="PAGE",
+			help="page to compare on multi-page schematics")
+
+	(options, args) = parser.parse_args()
+
+	if len(args) != 2:
+		parser_print_usage()
+		return
+
+	from_file, to_file = args
 
 	try:
-		a_im = to_png(sys.argv[1])
+		a_im = to_png(from_file, page=options.page)
 	except BadExtension:
 		print "%s: skipping, not a board or schematic" % sys.argv[1]
 		return
 
 	try:
-		b_im = to_png(sys.argv[2])
+		b_im = to_png(to_file, page=options.page)
 	except BadExtension:
 		print "%s: skipping, not a board or schematic" % sys.argv[2]
 		return
