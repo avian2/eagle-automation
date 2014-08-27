@@ -3,6 +3,9 @@ import os
 import subprocess
 import tempfile
 
+def get_extension(path):
+	return path.split('.')[-1].lower()
+
 class BadExtension: Exception
 
 class EagleScriptExport:
@@ -13,8 +16,7 @@ class EagleScriptExport:
 
 		open(in_path, "rb").close()
 
-		extension = in_path.split('.')[-1].lower()
-
+		extension = get_extension(in_path)
 		script = self.write_script(extension, layers, out_paths)
 
 		for out_path in out_paths:
@@ -177,7 +179,7 @@ class EagleCAMExport:
 
 		open(in_path, "rb").close()
 
-		extension = in_path.split('.')[-1].lower()
+		extension = get_extension(in_path)
 		if extension != 'brd':
 			raise BadExtension
 
