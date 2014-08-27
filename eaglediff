@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
+import difflib
 import os
 from eagle_automation.config import config
-from eagle_automation.export import BadExtension, EaglePNGExport
+from eagle_automation.export import get_extension, BadExtension, EaglePNGExport, EagleDirectoryExport
 import sys
 import tempfile
 from PIL import Image, ImageOps, ImageChops 
@@ -42,36 +43,25 @@ def to_png(in_path, page):
 
 	return oim
 
-def main():
-	usage = """eaglediff, visually compare CadSoft Eagle files
-Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+def to_txt(in_path):
+	workdir = tempfile.mkdtemp()
 
-USAGE: %prog [options] from-file to-file"""
+	out_path = os.path.join(workdir, "out.txt")
 
-	parser = OptionParser(usage=usage)
-	parser.add_option("-p", "--page", dest="page", type=int, default=1,
-			metavar="PAGE",
-			help="page to compare on multi-page schematics")
+	export = EagleDirectoryExport()
+	export.export(in_path, None, [ out_path ])
 
-	(options, args) = parser.parse_args()
+	directory = open(out_path).read()
 
-	if len(args) != 2:
-		parser.print_help()
-		sys.exit(1)
+	os.unlink(out_path)
+	os.rmdir(workdir)
 
-	from_file, to_file = args
+	return directory
 
-	try:
-		a_im = to_png(from_file, page=options.page)
-	except BadExtension:
-		print "%s: skipping, not a board or schematic" % sys.argv[1]
-		return
+def diff_visual(from_file, to_file, page):
 
-	try:
-		b_im = to_png(to_file, page=options.page)
-	except BadExtension:
-		print "%s: skipping, not a board or schematic" % sys.argv[2]
-		return
+	a_im = to_png(from_file, page=page)
+	b_im = to_png(to_file, page=page)
 
 	# make the sizes equal
 	# if a sheet contains the filename, it is updated with the temporary name
@@ -98,5 +88,53 @@ USAGE: %prog [options] from-file to-file"""
 	im = ImageChops.add(ImageChops.add(added, deled), same)
 
 	im.show()
+
+def diff_text(from_file, to_file):
+	a_txt = to_txt(from_file)
+	b_txt = to_txt(to_file)
+
+	a_lines = a_txt.split('\n')
+	b_lines = b_txt.split('\n')
+
+	diff = difflib.unified_diff(a_lines, b_lines, fromfile=from_file, tofile=to_file, lineterm='')
+	print '\n'.join(list(diff))
+
+def diff(from_file, to_file, page):
+	extension = get_extension(from_file)
+
+	if get_extension(to_file) != extension:
+		print "%s: both files should have the same extension" % (to_file,)
+		return
+
+	if extension == 'brd':
+		diff_visual(from_file, to_file, page)
+	elif extension == 'sch':
+		diff_visual(from_file, to_file, page)
+	elif extension == 'lbr':
+		diff_text(from_file, to_file)
+	else:
+		print "%s: skipping, not a board or schematic" % (from_file,)
+		return
+
+def main():
+	usage = """eaglediff, compare CadSoft Eagle files
+Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+
+USAGE: %prog [options] from-file to-file"""
+
+	parser = OptionParser(usage=usage)
+	parser.add_option("-p", "--page", dest="page", type=int, default=1,
+			metavar="PAGE",
+			help="page to compare on multi-page schematics")
+
+	(options, args) = parser.parse_args()
+
+	if len(args) != 2:
+		parser.print_help()
+		sys.exit(1)
+
+	from_file, to_file = args
+
+	diff(from_file, to_file, options.page)
 
 main()

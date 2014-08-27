@@ -9,8 +9,14 @@ control tools and one-step builds).
 
 This repository currently contains the following:
 
-eaglediff     - Commandline visual diff tool for schematics and board layouts
-                that is compatible with git-difftool.
+eaglediff     - Commandline diff tool for schematics, board layouts and
+		libraries that is compatible with git-difftool.
+
+		For schematics and board layouts, a visual diff is
+		displayed.
+
+		For libraries, a textual comparisson of library elements is
+		shown.
 
 eagleexport   - A tool that exposes a unified commandline interface to various
                 different ways Eagle offers for exporting artwork.

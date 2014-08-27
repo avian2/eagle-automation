@@ -68,6 +68,17 @@ class EaglePNGExport(EagleScriptExport):
 
 		return script
 
+class EagleDirectoryExport(EagleScriptExport):
+
+	def write_script(self, extension, layers, out_paths):
+
+		if extension != 'lbr':
+			raise BadExtension
+
+		script = [	"EXPORT DIRECTORY %s" % out_paths[0] ]
+
+		return script
+
 class EaglePDFExport(EagleScriptExport):
 	def write_script(self, extension, layers, out_paths):
 
