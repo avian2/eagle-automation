@@ -15,7 +15,7 @@ eaglediff     - Commandline diff tool for schematics, board layouts and
 		For schematics and board layouts, a visual diff is
 		displayed.
 
-		For libraries, a textual comparisson of library elements is
+		For libraries, a textual comparison of library elements is
 		shown.
 
 eagleexport   - A tool that exposes a unified commandline interface to various
