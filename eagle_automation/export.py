@@ -24,7 +24,7 @@ import tempfile
 import subprocess
 
 def get_extension(path):
-	return os.path.splitext(path).lower()
+	return path.split(os.extsep)[-1].lower()
 
 class BadExtension: Exception
 
