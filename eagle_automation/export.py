@@ -68,6 +68,68 @@ class EaglePNGExport(EagleScriptExport):
 
 		return script
 
+class EagleBOMExport(EagleScriptExport):
+	ULP_TEMPLATE_HEAD = ""
+	ULP_TEMPLATE_TAIL = ""
+	ULP_TEMPLATE = r"""
+		schematic(SCH) {
+
+			string FileName;
+			string json;
+			string sep = "";
+
+			FileName = filesetext("%(out_path)s", ".json");
+
+			output(FileName, "wt") {
+				printf("{\n");
+				printf("\t\"items\": [\n");
+				SCH.parts(P) {
+					if (P.device.package) {
+						json = sep + "\t\t{"
+							+ " \"designator\": \"" + P.name + "\", "
+								   + "\"value\": \"" + P.value + "\", "
+								   + "\"description\": \"" + P.device.headline + "\" "
+							+ "}";
+						sep = ",\n";
+						printf("%%s", json);
+					}
+				}
+				printf("\n\t]\n}\n");
+			}
+		}
+		"""
+
+	def write_script(self, extension, layers, out_paths):
+		if extension != 'sch':
+			raise BadExtension
+
+		self.ulp_dir = self.workdir or tempfile.mkdtemp()
+		self.ulp_path = os.path.join(self.ulp_dir, "bom.ulp")
+
+		ulp = open(self.ulp_path, "w")
+		ulp.write(self.ULP_TEMPLATE_HEAD)
+
+		for layer, out_path in zip(layers, out_paths):
+
+			assert '"' not in out_path
+			ulp.write(self.ULP_TEMPLATE % {
+				'out_path': out_path,
+			})
+
+		ulp.write(self.ULP_TEMPLATE_TAIL)
+		ulp.close()
+
+		print self.ulp_path
+
+		return [	"DISPLAY ALL",
+				"RUN %s" % (self.ulp_path,) ]
+
+	def clean(self):
+		os.unlink(self.ulp_path)
+		if not self.workdir:
+			os.rmdir(self.ulp_dir)
+
+
 class EagleDirectoryExport(EagleScriptExport):
 
 	def write_script(self, extension, layers, out_paths):

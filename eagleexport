@@ -6,11 +6,13 @@ from eagle_automation.export import	EaglePNGExport, \
 					EaglePDFExport, \
 					EagleGerberExport, \
 					EagleExcellonExport, \
-					EagleMountSMDExport
+					EagleMountSMDExport, \
+					EagleBOMExport
 import sys
 
 out_types = {	'png': EaglePNGExport,
 		'pdf': EaglePDFExport,
+		'bom': EagleBOMExport,
 		'gerber': EagleGerberExport,
 		'excellon': EagleExcellonExport,
 		'mountsmd': EagleMountSMDExport }
