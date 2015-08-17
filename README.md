@@ -1,64 +1,72 @@
 Eagle automation
 ================
 
-Eagle automation provides a more Unix-like and scriptable interface to the
-CadSoft Eagle electronics design package. It is meant to make open hardware
-development a bit more convenient for anyone that is used to the procedures
-usually employed by open source software projects (for example using source
-control tools and one-step builds).
+Python's Eagle Automation (`PEA`) provides a more Unix-like and scriptable
+interface to the CadSoft Eagle electronics design package. It is meant to make
+open hardware development a bit more convenient for anyone that is used to the
+procedures usually employed by open source software projects (for example using
+source control tools and one-step builds).
 
 This repository currently contains the following:
 
-eaglediff     - Commandline diff tool for schematics, board layouts and
-		libraries that is compatible with git-difftool.
+- `pea diff`
+   - Commandline diff tool for schematics, board layouts and
+   libraries that is compatible with git-difftool.
+   For schematics and board layouts, a visual diff is
+   displayed. <br />
+   For libraries, a textual comparison of library elements is
+   shown.
 
-		For schematics and board layouts, a visual diff is
-		displayed.
+- `pea export`
+   - A tool that exposes a unified commandline interface to various
+   different ways Eagle offers for exporting artwork. <br />
+   It currently supports exporting Eagle files to Gerber, PDF and
+   PNG formats, generating Excellon drill files and files needed
+   for pick & place machines.
 
-		For libraries, a textual comparison of library elements is
-		shown.
+- `pea drill`
+   - Generate `.drl` files from `.dri` without any annoying dialogs.
 
-eagleexport   - A tool that exposes a unified commandline interface to various
-                different ways Eagle offers for exporting artwork.
+- `pea bom`
+   - Generate .json file with the full list of components
 
-                It currently supports exporting Eagle files to Gerber, PDF and
-                PNG formats, generating Excellon drill files and files needed
-                for pick & place machines.
-
-eagledrl      - Generate .drl files from .dri without any annoying dialogs.
-
-skel/Makefile - An example Makefile that demonstrates how fabrication and
-                assembly documentation for a project can be generated
-                automatically with GNU Make.
+- `skel/Makefile` 
+   - An example Makefile that demonstrates how fabrication and
+   assembly documentation for a project can be generated
+   automatically with GNU Make.
 
 
 
 Installation
 ============
 
-Run:
+From pipy, do:
 
-$ python setup.py install
-$ git config --global --add difftool.eaglediff.cmd 'eaglediff $LOCAL $REMOTE'
+    % pip install eagle_automation
 
-Note these scripts have only been tested using Eagle 5.11.0.
+From the sources, run:
+
+    % python setup.py install
+    % git config --global --add difftool.eaglediff.cmd 'pea diff $LOCAL $REMOTE'
+
+Note these scripts have only been tested using Eagle ≥5.11.0 (and 7.2)
 
 
 
 Usage
 =====
 
-You can find a Makefile in the skel/ subdirectory that shows how you can
-automatically build your project's documentation using make from .sch and
+You can find a `Makefile` in the `skel/` subdirectory that shows how you can
+automatically build your project's documentation using make from `.sch` and
 .brd files.
 
 To show differences to the design that have not yet been committed:
 
-$ git difftool -t eaglediff
+    % git difftool -t eaglediff
 
 To show differences between two tagged versions:
 
-$ git difftool -t eaglediff v1.0..v2.0
+    % git difftool -t eaglediff v1.0..v2.0
 
 Note that Eagle windows will blink on and off during the use of these
 tools. Try not to touch anything while they are doing that. 
@@ -75,16 +83,16 @@ Configuration
 =============
 
 These tools make a distinction between "export layers" (e.g. layer names
-used on the eagleexport command line) and "Eagle layers" (layer names as they
+used on the `pea export` command line) and "Eagle layers" (layer names as they
 appear in the Eagle user interface). One export layer typically corresponds to
 one mask and consists of one or more Eagle layers.
 
-For example "topcopper" export layer by default includes "Top", "Pads" and
-"Vias" Eagle layers.
+For example `topcopper` export layer by default includes `Top`, `Pads` and
+`Vias` Eagle layers.
 
 A configuration file provides a mapping between export layers and Eagle layers
 and some other tweakable settings. Default configuration is installed by
-setup.py. It should work for most simple one- or two-layer boards.
+`setup.py`. It should work for most simple one- or two-layer boards.
 
 Should you want to adjust something, you can place your own configuration file
 to one of the following locations. Settings in later locations override earlier
@@ -94,14 +102,14 @@ ones:
 	$HOME/.config/eagle_automation.conf
 	./eagle_automation.conf
 
-You can use the 'eagle_automation/default.conf' file as a template.
+You can use the `eagle_automation/default.conf` file as a template.
 
 
 
 Known problems
 ==============
 
-When exporting to PDF using eagleexport, default print settings are used.
+When exporting to PDF using `pea export`, default print settings are used.
 To set them, go to File -> Print setup, make changes, then quit Eagle so
 that the settings are saved.
 
@@ -110,6 +118,11 @@ can be compared at a time and you have to specify the page number on the
 command line using --page.
 
 
+Contributors
+============
+
+Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
 
 License
 =======
