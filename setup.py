@@ -7,7 +7,7 @@ if sys.platform == 'win32':
 	import py2exe
 
 setup(
-	name='pea',
+	name='eagle_automation',
 	version='0.1.0',
 	description='Simple scripts supporting open hardware development using CadSoft EAGLE',
 	license='GPL',
