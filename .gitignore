@@ -1,2 +1,8 @@
 build
 *.pyc
+__pycache__
+.eggs
+.installed.cfg
+bin
+*.egg-info
+var

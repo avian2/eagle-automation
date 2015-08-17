@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import re
 import sys
 
-def main():
+def drill():
 	lines = 0
 
 	for line in sys.stdin:
@@ -27,4 +27,4 @@ def main():
 		sys.stderr.write("Error: no drills found!\n")
 		sys.exit(1)
 
-main()
+

@@ -15,7 +15,7 @@ def _get_config():
 
 	for path in CONFIG_PATHS:
 		if os.path.exists(path):
-			execfile(path, config.__dict__)
+			exec(compile(open(path).read(), path, 'exec'), config.__dict__)
 
 	return config
 

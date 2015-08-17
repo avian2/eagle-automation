@@ -1,12 +1,35 @@
+"""
+{base}, export layers from CadSoft Eagle files
+Copyright (C) 2013  Tomaz Solc <tomaz.solc@tablix.org>
+Copyright (C) 2015  Bernard Pratz <guyzmo+pea@m0g.net>
+
+Usage: {base} {command} <input> <type> [<output>:<layer> ...]
+
+Options:
+  <input>               .brd, .sch or .lbr file to extract data from
+  <type>                chosen output type
+  <output>              filename to export data to
+  <layer>               loyer to export data from, linked with the output file
+
+<type> can be any of:  {types}
+<layer> can be any of: {layers}
+
+"""
+
 from eagle_automation.config import config
 import os
-import subprocess
+import sys
+import docopt
 import tempfile
+import subprocess
 
 def get_extension(path):
-	return path.split('.')[-1].lower()
+	return os.path.splitext(path).lower()
 
 class BadExtension: Exception
+
+
+out_types=dict()
 
 class EagleScriptExport:
 	def __init__(self, workdir=None):
@@ -68,6 +91,9 @@ class EaglePNGExport(EagleScriptExport):
 
 		return script
 
+
+out_types['png'] = EaglePNGExport
+
 class EagleBOMExport(EagleScriptExport):
 	ULP_TEMPLATE_HEAD = ""
 	ULP_TEMPLATE_TAIL = ""
@@ -119,7 +145,7 @@ class EagleBOMExport(EagleScriptExport):
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
-		print self.ulp_path
+		print(self.ulp_path)
 
 		return [	"DISPLAY ALL",
 				"RUN %s" % (self.ulp_path,) ]
@@ -128,6 +154,9 @@ class EagleBOMExport(EagleScriptExport):
 		os.unlink(self.ulp_path)
 		if not self.workdir:
 			os.rmdir(self.ulp_dir)
+
+
+out_types['bom'] = EagleBOMExport
 
 
 class EagleDirectoryExport(EagleScriptExport):
@@ -164,51 +193,55 @@ class EaglePDFExport(EagleScriptExport):
 
 		return script
 
+
+out_types['pdf'] = EaglePDFExport
+
+
 class EagleMountSMDExport(EagleScriptExport):
 
 	# Following ULP code based on "mountsmd.ulp" by CadSoft
 
 	ULP_TEMPLATE_HEAD = """
-board(B) {
-    string fileName;
-"""
+		board(B) {
+		string fileName;
+	"""
 
 	ULP_TEMPLATE = """
-    fileName = "%(out_path)s";
-    output(fileName) {
+		fileName = "%(out_path)s";
+		output(fileName) {
 
-        B.elements(E) {
+			B.elements(E) {
 
-            int wasSmd,
-                xmax =-2147483648,
-                xmin = 2147483647,
-                ymax = xmax,
-                ymin = xmin;
+				int wasSmd,
+					xmax =-2147483648,
+					xmin = 2147483647,
+					ymax = xmax,
+					ymin = xmin;
 
-            wasSmd = 0;
+				wasSmd = 0;
 
-            E.package.contacts(C) {
-                if (C.smd && C.smd.layer == %(pp_id)d) {
-                    wasSmd = 1;
+				E.package.contacts(C) {
+					if (C.smd && C.smd.layer == %(pp_id)d) {
+						wasSmd = 1;
 
-                    if (C.x > xmax) xmax = C.x;
-                    if (C.y > ymax) ymax = C.y;
-                    if (C.x < xmin) xmin = C.x;
-                    if (C.y < ymin) ymin = C.y;
-                }
-            }
+						if (C.x > xmax) xmax = C.x;
+						if (C.y > ymax) ymax = C.y;
+						if (C.x < xmin) xmin = C.x;
+						if (C.y < ymin) ymin = C.y;
+					}
+				}
 
-            if (wasSmd)
-                printf("%%s %%5.2f %%5.2f %%3.0f %%s %%s\\n",
-                E.name, u2mm((xmin + xmax)/2), u2mm((ymin + ymax)/2),
-                E.angle, E.value, E.package.name);
-        }
-    }
-"""
+				if (wasSmd)
+					printf("%%s %%5.2f %%5.2f %%3.0f %%s %%s\\n",
+					E.name, u2mm((xmin + xmax)/2), u2mm((ymin + ymax)/2),
+					E.angle, E.value, E.package.name);
+			}
+		}
+	"""
 
 	ULP_TEMPLATE_TAIL = """
-}
-"""
+	}
+	"""
 
 	def write_script(self, extension, layers, out_paths):
 
@@ -234,7 +267,7 @@ board(B) {
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
-		print self.ulp_path
+		print(self.ulp_path)
 
 		return [	"DISPLAY ALL",
 				"RUN %s" % (self.ulp_path,) ]
@@ -243,6 +276,10 @@ board(B) {
 		os.unlink(self.ulp_path)
 		if not self.workdir:
 			os.rmdir(self.ulp_dir)
+
+
+out_types['mountsmd'] = EagleMountSMDExport
+
 
 class EagleCAMExport:
 	def __init__(self, workdir=None):
@@ -266,5 +303,63 @@ class EagleCAMExport:
 class EagleGerberExport(EagleCAMExport):
 	DEVICE = "GERBER_RS274X"
 
+
+out_types['gerber'] = EagleGerberExport
+
 class EagleExcellonExport(EagleCAMExport):
 	DEVICE = "EXCELLON"
+
+
+out_types['excellon'] = EagleExcellonExport
+
+
+################################################################################
+
+def export_main():
+	args = docopt.docopt(__doc__.format(
+		base=sys.argv[0],
+		command=sys.argv[1],
+		types=', '.join(out_types.keys()),
+		layers=', '.join(config.LAYERS.keys())
+	))
+
+	layers = []
+	out_paths = []
+	for arg in args['<output>:<layer>']:
+		try:
+			out_path, layer_name = arg.split(":")
+		except ValueError:
+			out_path = arg
+			layer_name = None
+
+		extension = args['<input>'].split('.')[-1].lower()
+		if extension == 'brd':
+			if layer_name is None:
+				print("Layer name required when exporting brd files")
+				sys.exit(1)
+
+			try:
+				layer = config.LAYERS[layer_name]
+			except KeyError:
+				print("Unknown layer: " + layer_name)
+				sys.exit(1)
+		elif extension == 'sch':
+			layer = {'layers': ['ALL']}
+		else:
+			print("Bad extension %s: Eagle requires file names ending in sch or brd" % extension)
+			sys.exit(1)
+
+		layers.append(layer)
+		out_paths.append(out_path)
+
+	try:
+		export_class = out_types[args['<type>']]
+	except KeyError:
+		print("Unknown type: " + out_type)
+		sys.exit(1)
+
+	export_class().export(args['<input>'], layers, out_paths)
+
+
+if __name__ == "__main__":
+    export_main()

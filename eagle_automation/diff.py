@@ -1,13 +1,32 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
-import difflib
+"""pea diff: compare CadSoft Eagle files
+Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
+Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+
+USAGE: {prog} {command} [options] <from-file> <to-file>
+
+Parameters:
+    <from-file>     File to diff from
+    <to-file>       File to diff to
+
+Options:
+    -p,--page       Page to compare on multi-page schematics [default: 0]
+
+"""
+
+from __future__ import print_function
+
 import os
+import sys
+import docopt
+import difflib
+import tempfile
+
+from PIL import Image, ImageOps, ImageChops
+
 from eagle_automation.config import config
 from eagle_automation.export import get_extension, BadExtension, EaglePNGExport, EagleDirectoryExport
-import sys
-import tempfile
-from PIL import Image, ImageOps, ImageChops 
-from optparse import OptionParser
 
 def to_png(in_path, page):
 
@@ -97,13 +116,13 @@ def diff_text(from_file, to_file):
 	b_lines = b_txt.split('\n')
 
 	diff = difflib.unified_diff(a_lines, b_lines, fromfile=from_file, tofile=to_file, lineterm='')
-	print '\n'.join(list(diff))
+	print('\n'.join(list(diff)))
 
 def diff(from_file, to_file, page):
 	extension = get_extension(from_file)
 
 	if get_extension(to_file) != extension:
-		print "%s: both files should have the same extension" % (to_file,)
+		print("%s: both files should have the same extension" % (to_file,))
 		return
 
 	if extension == 'brd':
@@ -113,28 +132,17 @@ def diff(from_file, to_file, page):
 	elif extension == 'lbr':
 		diff_text(from_file, to_file)
 	else:
-		print "%s: skipping, not a board or schematic" % (from_file,)
+		print("%s: skipping, not a board or schematic" % (from_file,))
 		return
 
-def main():
-	usage = """eaglediff, compare CadSoft Eagle files
-Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
 
-USAGE: %prog [options] from-file to-file"""
+################################################################################
 
-	parser = OptionParser(usage=usage)
-	parser.add_option("-p", "--page", dest="page", type=int, default=1,
-			metavar="PAGE",
-			help="page to compare on multi-page schematics")
+def diff_main():
+	args = docopt.docopt(__doc__.format(prog=sys.argv[0], command=sys.argv[1]))
+	print(args)
 
-	(options, args) = parser.parse_args()
+	diff(args['<from-file>'], args['<to-file>'], args['--page'])
 
-	if len(args) != 2:
-		parser.print_help()
-		sys.exit(1)
-
-	from_file, to_file = args
-
-	diff(from_file, to_file, options.page)
-
-main()
+if __name__ == '__main__':
+	diff_main()
