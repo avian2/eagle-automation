@@ -18,10 +18,18 @@ Options:
 
 from eagle_automation.config import config
 import os
+import re
 import sys
 import docopt
 import tempfile
+import itertools
 import subprocess
+
+def ranges(i):
+    for a, b in itertools.groupby(enumerate(i), lambda t: t[1] - t[0]):
+        b = list(b)
+        yield b[0][1], b[-1][1]
+
 
 def get_extension(path):
 	return path.split(os.extsep)[-1].lower()
@@ -112,9 +120,11 @@ class EagleBOMExport(EagleScriptExport):
 				SCH.parts(P) {
 					if (P.device.package) {
 						json = sep + "\t\t{"
-							+ " \"designator\": \"" + P.name + "\", "
-								   + "\"value\": \"" + P.value + "\", "
-								   + "\"description\": \"" + P.device.headline + "\" "
+							+   "\"prefix\": \""      + P.device.prefix   + "\", "
+							+   "\"designator\": \""  + P.name            + "\", "
+							+   "\"value\": \""       + P.value           + "\", "
+							+   "\"description\": \"" + P.device.headline + "\", "
+							+   "\"package\": \""     + P.device.package.name  + "\" "
 							+ "}";
 						sep = ",\n";
 						printf("%%s", json);
@@ -124,6 +134,45 @@ class EagleBOMExport(EagleScriptExport):
 			}
 		}
 		"""
+
+	def collapse_bom(self):
+		import json
+		import csv
+
+		# out_bom[prefix][package][value] -> [devices]
+		out_bom = dict()
+		with open(os.path.join(self.ulp_dir, "bom.json"), 'r') as bom:
+			bom = json.load(bom)
+			for bom_path in self.bom_path:
+				for part in bom['items']:
+					prefix, package, value = part['prefix'], part['package'], part['value']
+					out_bom.setdefault(prefix, dict()).setdefault(package, dict()).setdefault(value, list()).append(part)
+
+				if '.json' in bom_path:
+					with open(bom_path, 'w') as out:
+						out.write(json.dumps(out_bom))
+
+				elif '.csv' in bom_path:
+					with open(bom_path, 'w', newline='') as csvfile:
+						bom_writer = csv.writer(csvfile, dialect='excel', delimiter='	', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+						bom_writer.writerow(['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description'])
+						# d['R']['SMT0805']['0R'][1]
+						for prefix, packages in out_bom.items():
+							for package, items in packages.items():
+								for value, devices in items.items():
+									range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
+									row = [prefix,
+											package,
+											value,
+											len(devices),
+											",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list]),
+											devices[0]['description']]
+									bom_writer.writerow(row)
+
+				elif '.xlsx' in bom_path:
+					print("TODO xlsx support!")
+				elif '.xls' in bom_path:
+					print("TODO xlsx support!")
 
 	def write_script(self, extension, layers, out_paths):
 		if extension != 'sch':
@@ -135,22 +184,28 @@ class EagleBOMExport(EagleScriptExport):
 		ulp = open(self.ulp_path, "w")
 		ulp.write(self.ULP_TEMPLATE_HEAD)
 
+		self.bom_path = []
 		for layer, out_path in zip(layers, out_paths):
+			self.bom_path.append(out_path)
 
-			assert '"' not in out_path
-			ulp.write(self.ULP_TEMPLATE % {
-				'out_path': out_path,
-			})
+		assert '"' not in out_path
+		ulp.write(self.ULP_TEMPLATE % {
+			'out_path': os.path.join(self.ulp_dir, "bom.json"),
+		})
 
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
 		print(self.ulp_path)
 
-		return [	"DISPLAY ALL",
-				"RUN %s" % (self.ulp_path,) ]
+		return [
+            "DISPLAY ALL",
+            "RUN %s" % (self.ulp_path,)
+        ]
 
 	def clean(self):
+		self.collapse_bom()
+		os.unlink(os.path.join(self.ulp_dir, "bom.json"))
 		os.unlink(self.ulp_path)
 		if not self.workdir:
 			os.rmdir(self.ulp_dir)
