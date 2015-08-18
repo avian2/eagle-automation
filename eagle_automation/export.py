@@ -40,8 +40,9 @@ class BadExtension: Exception
 out_types=dict()
 
 class EagleScriptExport:
-	def __init__(self, workdir=None):
+	def __init__(self, workdir=None, verbose=False):
 		self.workdir = workdir
+		self.verbose = verbose
 
 	def export(self, in_path, layers, out_paths):
 
@@ -175,9 +176,33 @@ class EagleBOMExport(EagleScriptExport):
 					except ImportError:
 						print("Please install xlsxwriter: `pip install xlsxwriter`")
 						sys.exit(2)
-					self.writer = Workbook(bom_path).add_worksheet()
-					# TODO
-					print("TODO xlsx support!")
+					try:
+						workbook = Workbook(bom_path)
+						title = workbook.add_format({'bold': True, 'bg_color': 'gray'})
+						bom_writer = workbook.add_worksheet()
+						bom_writer.set_column(0, 0, 4.50)
+						bom_writer.set_column(1, 1, 14.50)
+						bom_writer.set_column(2, 2, 16)
+						bom_writer.set_column(3, 3, 2)
+						bom_writer.set_column(4, 5, 50.00)
+						keys = ['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description']
+						for c, key in enumerate(keys):
+							bom_writer.write_string(0, c, key, title)
+						row_idx =1
+						for prefix, packages in out_bom.items():
+							for package, items in packages.items():
+								for value, devices in items.items():
+									range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
+									range_list = ",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list])
+									bom_writer.write(row_idx, 0, prefix)
+									bom_writer.write(row_idx, 1, package)
+									bom_writer.write(row_idx, 2, value)
+									bom_writer.write(row_idx, 3, str(len(devices)))
+									bom_writer.write(row_idx, 4, range_list)
+									bom_writer.write(row_idx, 5, devices[0]['description'])
+									row_idx += 1
+					finally:
+						workbook.close()
 				elif '.xls' in bom_path:
 					print("TODO xls support!")
 
@@ -203,7 +228,9 @@ class EagleBOMExport(EagleScriptExport):
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
-		print(self.ulp_path)
+		if self.verbose:
+			print("Info: Script path:", self.ulp_path)
+			print("Info: Raw bom output in:", os.path.join(self.ulp_dir, "bom.json"))
 
 		return [
             "DISPLAY ALL",
@@ -329,7 +356,8 @@ class EagleMountSMDExport(EagleScriptExport):
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
-		print(self.ulp_path)
+		if self.verbose:
+			print(self.ulp_path)
 
 		return [	"DISPLAY ALL",
 				"RUN %s" % (self.ulp_path,) ]
@@ -344,8 +372,8 @@ out_types['mountsmd'] = EagleMountSMDExport
 
 
 class EagleCAMExport:
-	def __init__(self, workdir=None):
-		pass
+	def __init__(self, workdir=None, verbose=False):
+		self.verbose = verbose
 
 	def export(self, in_path, layers, out_paths):
 
@@ -377,13 +405,16 @@ out_types['excellon'] = EagleExcellonExport
 
 ################################################################################
 
-def export_main():
+def export_main(verbose=False):
 	args = docopt.docopt(__doc__.format(
 		base=sys.argv[0],
 		command=sys.argv[1],
 		types=', '.join(out_types.keys()),
 		layers=', '.join(config.LAYERS.keys())
 	))
+
+	if verbose:
+		print("Arguments:", args)
 
 	layers = []
 	out_paths = []
@@ -420,7 +451,7 @@ def export_main():
 		print("Unknown type: " + out_type)
 		sys.exit(1)
 
-	export_class().export(args['<input>'], layers, out_paths)
+	export_class(verbose=verbose).export(args['<input>'], layers, out_paths)
 
 
 if __name__ == "__main__":

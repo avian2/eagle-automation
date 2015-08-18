@@ -138,9 +138,10 @@ def diff(from_file, to_file, page):
 
 ################################################################################
 
-def diff_main():
+def diff_main(verbose=False):
 	args = docopt.docopt(__doc__.format(prog=sys.argv[0], command=sys.argv[1]))
-	print(args)
+    if verbose:
+        print("Arguments:", args)
 
 	diff(args['<from-file>'], args['<to-file>'], args['--page'])
 
