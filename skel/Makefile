@@ -1,4 +1,4 @@
-PROJECT = Example
+PROJECT = ExampleProject
 DISTDIR = Dist
 
 # mapping between eagle and physical layers is in eagle_automation.conf
@@ -7,11 +7,15 @@ ASSEMBLY_LAYERS = \
 	toppaste \
 	topmask \
 	topcopper \
+	layer2 \
+	layer3 \
 	bottomcopper \
 	bottommask \
 	bottompaste \
 	bottomsilk \
 	measures
+
+# remove layer2 and layer3 for a 2 layers board
 
 ####################################################################################
 
@@ -21,6 +25,7 @@ GITREV=$(shell git rev-parse --short HEAD)
 OUTDIR = $(DISTDIR)/$(PROJECT)-$(GITREV)
 
 GERBER_ROOT = $(OUTDIR)/Gerber
+BOM_ROOT = $(OUTDIR)/BOM
 
 ASSEMBLY_FILES = $(addprefix $(OUTDIR)/$(PROJECT)-,$(addsuffix .pdf,$(ASSEMBLY_LAYERS)))
 ASSEMBLY_EXPORT = $(join $(ASSEMBLY_FILES),$(addprefix :,$(ASSEMBLY_LAYERS)))
@@ -30,6 +35,8 @@ GERBER_FILES = \
 	$(GERBER_ROOT)/$(PROJECT).sol \
 	$(GERBER_ROOT)/$(PROJECT).plc \
 	$(GERBER_ROOT)/$(PROJECT).pls \
+	$(GERBER_ROOT)/$(PROJECT).l2 \
+	$(GERBER_ROOT)/$(PROJECT).l3 \
 	$(GERBER_ROOT)/$(PROJECT).stc \
 	$(GERBER_ROOT)/$(PROJECT).sts \
 	$(GERBER_ROOT)/$(PROJECT).crc \
@@ -56,12 +63,13 @@ else
 endif
 
 all: precheck $(PROJECT)-assembly.pdf $(ASSEMBLY_FILES) $(DIST)
-	$(Pecho) " 🍻  Build finished, assembly files output in: $(OUTDIR)"
+	$(Pecho) "🍻  Build finished, assembly files output in: $(OUTDIR)"
 
 precheck:
 	$(Pecho) " → Making sure target dirs exists"
 	$P mkdir -p $(OUTDIR)
 	$P mkdir -p $(GERBER_ROOT)
+	$P mkdir -p $(BOM_ROOT)
 
 clean:
 	$(Pecho) " → Cleaning up all generated files"
@@ -69,7 +77,7 @@ clean:
 
 $(ASSEMBLY_FILES): $(PROJECT).brd
 	$(Pecho) " → Building each layer PDF"
-	$P eagleexport $< pdf $(ASSEMBLY_EXPORT)
+	$P pea export $< pdf $(ASSEMBLY_EXPORT)
 
 $(PROJECT)-assembly.pdf: $(ASSEMBLY_FILES)
 	$(Pecho) " → Building assembly PDF"
@@ -77,55 +85,55 @@ $(PROJECT)-assembly.pdf: $(ASSEMBLY_FILES)
 
 $(DIST): $(GERBER_FILES) $(EXCELLON_FILES) $(PP_FILES)
 	$(Pecho) " → Packing up gerber batch into $(DIST)"
-	$P cd $(DISTDIR) ; zip $@ $^
+	$P cd $(DISTDIR) && zip $(subst $(DISTDIR)/,,$@)  $(subst $(DISTDIR)/,,$^) > /dev/null
 
 $(GERBER_ROOT)/%.cmp: %.brd
-	$(Pecho) " → Generating top copper (.cmp) gerber file"
-	$P echo "\n\n\n" | eagleexport $< gerber $@:topcopper
+	$(Pecho) " → Generating top copper, component side (.cmp) gerber file"
+	$P echo "\n\n\n\n" | pea export $< gerber $@:topcopper
 
 $(GERBER_ROOT)/%.sol: %.brd
-	$(Pecho) " → Generating bottom copper (.sol) gerber file"
-	$P eagleexport $< gerber $@:bottomcopper
+	$(Pecho) " → Generating bottom copper, solder side (.sol) gerber file"
+	$P pea export $< gerber $@:bottomcopper
 
 $(GERBER_ROOT)/%.l2: %.brd
-	$(Pecho) " → Generating layer 2 (.l2) gerber file"
-	$P eagleexport $< gerber $@:layer2
+	$(Pecho) " → Generating layer 2, internal (.l2) gerber file"
+	$P pea export $< gerber $@:layer2
 
 $(GERBER_ROOT)/%.l3: %.brd
-	$(Pecho) " → Generating layer 3 (.l3) gerber file"
-	$P eagleexport $< gerber $@:layer2
+	$(Pecho) " → Generating layer 3, internal (.l3) gerber file"
+	$P pea export $< gerber $@:layer3
 
 $(GERBER_ROOT)/%.plc: %.brd
-	$(Pecho) " → Generating top silk (.plc) gerber file"
-	$P eagleexport $< gerber $@:topsilk
+	$(Pecho) " → Generating top silkscreen, component side (.plc) gerber file"
+	$P pea export $< gerber $@:topsilk
 
 $(GERBER_ROOT)/%.pls: %.brd
-	$(Pecho) " → Generating bottom silk (.pls) gerber file"
-	$P eagleexport $< gerber $@:bottomsilk
+	$(Pecho) " → Generating bottom silkscreen, solder side (.pls) gerber file"
+	$P pea export $< gerber $@:bottomsilk
 
 $(GERBER_ROOT)/%.stc: %.brd
-	$(Pecho) " → Generating top mask (.stc) gerber file"
-	$P eagleexport $< gerber $@:topmask
+	$(Pecho) " → Generating top mask solder stop, component side (.stc) gerber file"
+	$P pea export $< gerber $@:topmask
 
 $(GERBER_ROOT)/%.sts: %.brd
-	$(Pecho) " → Generating bottom mask (.sts) gerber file"
-	$P eagleexport $< gerber $@:bottommask
+	$(Pecho) " → Generating bottom mask solder stop, solder side (.sts) gerber file"
+	$P pea export $< gerber $@:bottommask
 
 $(GERBER_ROOT)/%.crc: %.brd
-	$(Pecho) " → Generating top paste (.crc) gerber file"
-	$P eagleexport $< gerber $@:toppaste
+	$(Pecho) " → Generating top paste, component side (.crc) gerber file"
+	$P pea export $< gerber $@:toppaste
 
 $(GERBER_ROOT)/%.crs: %.brd
-	$(Pecho) " → Generating bottom paste (.crs) gerber file"
-	$P eagleexport $< gerber $@:bottompaste
+	$(Pecho) " → Generating bottom paste, solder side (.crs) gerber file"
+	$P pea export $< gerber $@:bottompaste
 
 $(GERBER_ROOT)/%.oln: %.brd
 	$(Pecho) " → Generating outline (.oln) gerber file"
-	$P eagleexport $< gerber $@:outline
+	$P pea export $< gerber $@:outline
 
 $(GERBER_ROOT)/%.dri $(GERBER_ROOT)/%.drd: %.brd
 	$(Pecho) " → Generating drills (.dri) gerber/excellion file"
-	$P eagleexport $< excellon $@:drills
+	$P pea export $< excellon $@:drills
 
 $(GERBER_ROOT)/%.drl: $(GERBER_ROOT)/%.dri
 	$(Pecho) " → Generating drills (.drl) gerber/excellion file"
@@ -133,10 +141,14 @@ $(GERBER_ROOT)/%.drl: $(GERBER_ROOT)/%.dri
 
 $(GERBER_ROOT)/%.mnt: %.brd
 	$(Pecho) " → Generating top assembly (.mnt) PNP file"
-	$P eagleexport $< mountsmd $@:topassembly
+	$P pea export $< mountsmd $@:topassembly
 
 $(GERBER_ROOT)/%.mnb: %.brd
 	$(Pecho) " → Generating bottom assembly (.mnb) PNP file"
-	$P eagleexport $< mountsmd $@:bottomassembly
+	$P pea export $< mountsmd $@:bottomassembly
+
+$(BOM_ROOT)/%.csv $(BOM_ROOT)/%.json $(BOM_ROOT)/%.xlsx: %.sch
+	$(Pecho) " → Generating Bill of Materials (.csv, .xlsx and .json)"
+	$P pea export $< bom $@
 
 .PHONY: clean
