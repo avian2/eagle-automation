@@ -121,24 +121,24 @@ command line using --page.
 Contributors
 ============
 
-Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
-Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
+    Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+    Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
 
 License
 =======
 
-Eagle automation, set of commandline tools for use with CadSoft Eagle
-Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
+    Eagle automation, set of commandline tools for use with CadSoft Eagle
+    Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
