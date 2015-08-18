@@ -170,9 +170,16 @@ class EagleBOMExport(EagleScriptExport):
 									bom_writer.writerow(row)
 
 				elif '.xlsx' in bom_path:
+					try:
+						from xlsxwriter.workbook import Workbook
+					except ImportError:
+						print("Please install xlsxwriter: `pip install xlsxwriter`")
+						sys.exit(2)
+					self.writer = Workbook(bom_path).add_worksheet()
+					# TODO
 					print("TODO xlsx support!")
 				elif '.xls' in bom_path:
-					print("TODO xlsx support!")
+					print("TODO xls support!")
 
 	def write_script(self, extension, layers, out_paths):
 		if extension != 'sch':
