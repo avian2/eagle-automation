@@ -78,6 +78,19 @@ nothing that can be done about that. If that bothers you, consider
 switching to a free EDA tool.
 
 
+Develop
+=======
+
+install buildout `pip install zc.buildout` and run:
+
+    % buildout
+    % bin/pea --help
+
+from the sources' root.
+
+Then you can run `python setup.py develop` to install a global instance linked to 
+current sources. Or `python setup.py install` to install it the old fashion way.
+
 
 Configuration
 =============
