@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
 """pea diff: compare CadSoft Eagle files
-Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
-Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
 
-USAGE: {prog} {command} [options] <from-file> <to-file>
+USAGE: {prog} {command} [--page=N] <from-file> <to-file>
 
 Parameters:
-    <from-file>     File to diff from
-    <to-file>       File to diff to
+	<from-file>	 File to diff from
+	<to-file>	   File to diff to
 
 Options:
-    -p,--page       Page to compare on multi-page schematics [default: 0]
+	-p,--page=N	   Page to compare on multi-page schematics [default: 1]
 
+Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
+Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
 """
 
 from __future__ import print_function
@@ -140,10 +140,10 @@ def diff(from_file, to_file, page):
 
 def diff_main(verbose=False):
 	args = docopt.docopt(__doc__.format(prog=sys.argv[0], command=sys.argv[1]))
-    if verbose:
-        print("Arguments:", args)
+	if verbose:
+		print("Arguments:", args)
 
-	diff(args['<from-file>'], args['<to-file>'], args['--page'])
+	diff(args['<from-file>'], args['<to-file>'], int(args['--page'] if args['--page'] else 0))
 
 if __name__ == '__main__':
 	diff_main()

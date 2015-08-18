@@ -39,7 +39,7 @@ else:
 
 setup(
 	name='eagle_automation',
-	version='0.1.5',
+	version='0.1.6',
 	description='Simple scripts supporting open hardware development using CadSoft EAGLE',
 	license='GPL',
 	author='Tomaz Solc, Bernard Pratz',
