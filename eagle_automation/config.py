@@ -1,7 +1,7 @@
 import os
 
 CONFIG_PATHS = [
-	os.path.join(os.path.dirname(__file__), 'default.conf'),
+	os.path.join(os.path.dirname(__file__), 'default.py'),
 	'/etc/eagle_automation.conf',
 	os.path.join(os.environ.get('HOME', '/'), '.config/eagle_automation.conf'),
 	'eagle_automation.conf',
