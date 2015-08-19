@@ -418,7 +418,7 @@ def export_main(verbose=False):
 		layers=', '.join(config.LAYERS.keys())
 	))
 
-	log.debug("Arguments: {}".format(repr(args)))
+	log.debug("Arguments:\n{}".format(repr(args)))
 
 	layers = []
 	out_paths = []

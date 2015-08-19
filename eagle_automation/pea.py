@@ -2,11 +2,11 @@
 
 """\
 Python Eagle Automation v{version}
-Usage: {base} [--verbose] [-c <name>=<value>] [--help] <command> [<args>...]
+Usage: {base} [--verbose] [-c <config> [-c <config>]] [--help] <command> [<args>...]
 
 Options:
-    -C <config>        Give path to configuration file
-    -c <name=value>    Change configuration option
+    -c <config>        Give path to configuration file, or set a configuration value
+                       following the scheme: `-c key=value`
     -v,--verbose       Give verbose output
     -h,--help          This message
 
@@ -30,6 +30,8 @@ import docopt
 import logging
 log = logging.getLogger('pea')
 
+import eagle_automation.config as config
+
 __version__ = pkg_resources.require("eagle_automation")[0].version
 
 def main():
@@ -41,6 +43,23 @@ def main():
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
+
+    log.debug('Parameters:\n{}'.format(repr(args)))
+
+    config.init()
+
+    if args['-c']:
+        for arg in args['-c']:
+            if '=' in args['-c']:
+                key, val = args['-c'].split('=')
+                config.config.insert(key, val)
+            else:
+                try:
+                    config.config.update(args['-c'])
+                except:
+                    log.error('Could not open file: {}'.format(args['-c']))
+
+    log.debug('Configuration:\n{}'.format(repr(config.__dict__)))
 
     sys.argv = [sys.argv[0]] + [args['<command>']] + args['<args>']
     if args['<command>'] == 'export':

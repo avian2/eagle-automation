@@ -14,75 +14,77 @@
 #            when exporting pick&place data.
 #
 # 'mirror' : Whether to mirror this layer on export.
-LAYERS = {
-	'topassembly': {
-		'layers': ['tPlace', 'tNames', 'tDocu'],
-		'pp_id': 1,
-	},
+class Config:
+    LAYERS = {
+        'topassembly': {
+            'layers': ['tPlace', 'tNames', 'tDocu'],
+            'pp_id': 1,
+        },
 
-	'topsilk': {
-		'layers': ['tPlace', 'tNames'],
-	},
+        'topsilk': {
+            'layers': ['tPlace', 'tNames'],
+        },
 
-	'toppaste': {
-		'layers': ['tCream'],
-	},
+        'toppaste': {
+            'layers': ['tCream'],
+        },
 
-	'topmask': {
-		'layers': ['tStop'],
-	},
+        'topmask': {
+            'layers': ['tStop'],
+        },
 
-	'topcopper': {
-		'layers': ['Top', 'Pads', 'Vias'],
-	},
+        'topcopper': {
+            'layers': ['Top', 'Pads', 'Vias'],
+        },
 
-	'bottomcopper': {
-		'layers': ['Bottom', 'Pads', 'Vias'],
-		'mirror': True,
-	},
+        'bottomcopper': {
+            'layers': ['Bottom', 'Pads', 'Vias'],
+            'mirror': True,
+        },
 
-	'bottommask': {
-		'layers': ['bStop'],
-		'mirror': True,
-	},
+        'bottommask': {
+            'layers': ['bStop'],
+            'mirror': True,
+        },
 
-	'bottompaste': {
-		'layers': ['bCream'],
-		'mirror': True,
-	},
+        'bottompaste': {
+            'layers': ['bCream'],
+            'mirror': True,
+        },
 
-	'bottomsilk': {
-		'layers': ['bPlace', 'bNames'],
-		'mirror': True,
-	},
+        'bottomsilk': {
+            'layers': ['bPlace', 'bNames'],
+            'mirror': True,
+        },
 
-	'bottomassembly': {
-		'layers': ['bPlace', 'bNames', 'bDocu'],
-		'mirror': True,
-		'pp_id': 16,
-	},
+        'bottomassembly': {
+            'layers': ['bPlace', 'bNames', 'bDocu'],
+            'mirror': True,
+            'pp_id': 16,
+        },
 
-	'outline': {
-		'layers': ['Milling'],
-	},
+        'outline': {
+            'layers': ['Milling'],
+        },
 
-	'measures': {
-		'layers': ['LayerStackup', 'DrillLegend', 'Measures'],
-	},
+        'measures': {
+            'layers': ['LayerStackup', 'DrillLegend', 'Measures'],
+        },
 
-	'drills': {
-		'layers': ['Drills', 'Holes'],
-	},
-}
+        'drills': {
+            'layers': ['Drills', 'Holes'],
+        },
+    }
 
 # Eagle layer names to always include when exporting documentation formats (e.g. PDF)
 #
 # These layers are usually used to add dimensions, frames, signatures, etc. to
 # all exported pages.
-DOCUMENT_LAYERS = ['Dimension', 'Document']
+    DOCUMENT_LAYERS = ['Dimension', 'Document']
 
 # Path to Eagle binary to use.
-EAGLE = "eagle"
+    EAGLE = "eagle"
 
 # DPI for bitmap exports.
-DPI = 400
+    DPI = 400
+

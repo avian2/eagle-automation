@@ -56,6 +56,7 @@ setup(
 		'Operating System :: Unix',
 	],
 	install_requires=[
+		'PyYAML',
 		'pillow',
 		'docopt',
 		'setuptools',

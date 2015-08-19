@@ -3,23 +3,45 @@ import os
 import logging
 log = logging.getLogger('pea').getChild(__name__)
 
-CONFIG_PATHS = [
-	os.path.join(os.path.dirname(__file__), 'default.py'),
+from yaml import load, dump
+try:
+	from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+	from yaml import Loader, Dumper
+
+from eagle_automation.default import Config
+
+DEFAULT_CONFIG_PATHS = [
 	'/etc/eagle_automation.conf',
 	os.path.join(os.environ.get('HOME', '/'), '.config/eagle_automation.conf'),
+	os.path.join(os.environ.get('HOME', '/'), '.eagle_automation.conf'),
 	'eagle_automation.conf',
+	'.eagle_automation.conf',
 ]
 
-class Config: pass
 
-def _get_config():
+def _set_value(self, key, val):
+	self.__dict__.update({key: val})
 
-	config = Config()
+def _read_config(self, path):
+	log.debug("Loading configuration: {}".format(path))
+	if os.path.exists(path):
+		data = load(stream, Loader=Loader)
+		self.__dict__.update(data)
+	else:
+		raise FileNotFoundError()
 
-	for path in CONFIG_PATHS:
-		if os.path.exists(path):
-			exec(compile(open(path).read(), path, 'exec'), config.__dict__)
+Config.update = _read_config
+Config.insert = _set_value
 
-	return config
+config = Config()
 
-config = _get_config()
+def init():
+	for path in DEFAULT_CONFIG_PATHS:
+		try:
+			config.update(path)
+			log.debug("Configuration file '{}' found!".format(path))
+		except:
+			log.debug("Configuration file '{}' not found".format(path))
+
+__all__ = ['config', 'init']
