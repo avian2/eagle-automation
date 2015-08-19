@@ -34,12 +34,12 @@ if sys.argv[0] == 'setup.py':
     ))
 else:
     opts.update(dict(
-        long_description=open('README.md', 'r'),
+        long_description=open('README.md', 'r').read(),
     ))
 
 setup(
 	name='eagle_automation',
-	version='0.1.7',
+	version='0.1.8',
 	description='Simple scripts supporting open hardware development using CadSoft EAGLE',
 	license='GPL',
 	author='Tomaz Solc, Bernard Pratz',
