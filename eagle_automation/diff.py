@@ -36,7 +36,7 @@ def to_png(in_path, page):
 	if extension == 'brd':
 		layers = config.LAYERS.values()
 		out_paths = [	os.path.join(workdir, layer + '.png')
-				for layer in config.LAYERS.iterkeys() ]
+				for layer in config.LAYERS.keys() ]
 	elif extension == 'sch':
 		layers = [{'layers': ['ALL']}]
 		out_paths = [os.path.join(workdir, 'all.png')]
