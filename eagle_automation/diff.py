@@ -23,6 +23,9 @@ import docopt
 import difflib
 import tempfile
 
+import logging
+log = logging.getLogger('pea').getChild(__name__)
+
 from PIL import Image, ImageOps, ImageChops
 
 from eagle_automation.config import config
@@ -122,7 +125,7 @@ def diff(from_file, to_file, page):
 	extension = get_extension(from_file)
 
 	if get_extension(to_file) != extension:
-		print("%s: both files should have the same extension" % (to_file,))
+		log.error("%s: both files should have the same extension" % (to_file,))
 		return
 
 	if extension == 'brd':
@@ -132,7 +135,7 @@ def diff(from_file, to_file, page):
 	elif extension == 'lbr':
 		diff_text(from_file, to_file)
 	else:
-		print("%s: skipping, not a board or schematic" % (from_file,))
+		log.error("%s: skipping, not a board or schematic" % (from_file,))
 		return
 
 
@@ -140,8 +143,7 @@ def diff(from_file, to_file, page):
 
 def diff_main(verbose=False):
 	args = docopt.docopt(__doc__.format(prog=sys.argv[0], command=sys.argv[1]))
-	if verbose:
-		print("Arguments:", args)
+	log.debug("Arguments: {}".format(repr(args)))
 
 	diff(args['<from-file>'], args['<to-file>'], int(args['--page'] if args['--page'] else 0))
 

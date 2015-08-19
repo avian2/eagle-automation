@@ -3,6 +3,9 @@
 import re
 import sys
 
+import logging
+log = logging.getLogger('pea').getChild(__name__)
+
 def drill():
 	lines = 0
 
@@ -24,7 +27,7 @@ def drill():
 			lines += 1
 
 	if not lines:
-		sys.stderr.write("Error: no drills found!\n")
+		log.error("no drills found!\n")
 		sys.exit(1)
 
 

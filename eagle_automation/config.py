@@ -1,5 +1,8 @@
 import os
 
+import logging
+log = logging.getLogger('pea').getChild(__name__)
+
 CONFIG_PATHS = [
 	os.path.join(os.path.dirname(__file__), 'default.py'),
 	'/etc/eagle_automation.conf',

@@ -27,6 +27,8 @@ import pkg_resources  # part of setuptools
 
 import sys
 import docopt
+import logging
+log = logging.getLogger('pea')
 
 __version__ = pkg_resources.require("eagle_automation")[0].version
 
@@ -34,6 +36,11 @@ def main():
     args = docopt.docopt(__doc__.format(base=sys.argv[0], version=__version__),
                   version = __version__,
                   options_first=True)
+
+    if args['--verbose']:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     sys.argv = [sys.argv[0]] + [args['<command>']] + args['<args>']
     if args['<command>'] == 'export':

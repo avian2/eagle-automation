@@ -6,10 +6,10 @@ Copyright (C) 2015  Bernard Pratz <guyzmo+pea@m0g.net>
 Usage: {base} {command} <input> <type> [<output>:<layer> ...]
 
 Options:
-  <input>               .brd, .sch or .lbr file to extract data from
-  <type>                chosen output type
-  <output>              filename to export data to
-  <layer>               loyer to export data from, linked with the output file
+	<input>               .brd, .sch or .lbr file to extract data from
+	<type>                chosen output type
+	<output>              filename to export data to
+	<layer>               loyer to export data from, linked with the output file
 
 <type> can be any of:  {types}
 <layer> can be any of: {layers}
@@ -25,10 +25,13 @@ import tempfile
 import itertools
 import subprocess
 
+import logging
+log = logging.getLogger('pea').getChild(__name__)
+
 def ranges(i):
-    for a, b in itertools.groupby(enumerate(i), lambda t: t[1] - t[0]):
-        b = list(b)
-        yield b[0][1], b[-1][1]
+	for a, b in itertools.groupby(enumerate(i), lambda t: t[1] - t[0]):
+		b = list(b)
+		yield b[0][1], b[-1][1]
 
 
 def get_extension(path):
@@ -83,8 +86,8 @@ class EaglePNGExport(EagleScriptExport):
 
 		if extension == 'brd':
 			script += [	"DISPLAY ALL",
-					"RATSNEST"
-				]
+						"RATSNEST"
+			]
 		elif extension == 'sch':
 			script += [	"EDIT .s%d" % self._page ]
 		else:
@@ -94,9 +97,9 @@ class EaglePNGExport(EagleScriptExport):
 			assert out_path.endswith(".png")
 
 			script += [	"DISPLAY None",
-					"DISPLAY %s" % (' '.join(layer['layers']),),
-					"EXPORT IMAGE %s MONOCHROME %d" % (out_path, config.DPI)
-				]
+						"DISPLAY %s" % (' '.join(layer['layers']),),
+						"EXPORT IMAGE %s MONOCHROME %d" % (out_path, config.DPI)
+			]
 
 		return script
 
@@ -107,34 +110,34 @@ class EagleBOMExport(EagleScriptExport):
 	ULP_TEMPLATE_HEAD = ""
 	ULP_TEMPLATE_TAIL = ""
 	ULP_TEMPLATE = r"""
-		schematic(SCH) {
+	schematic(SCH) {
 
-			string FileName;
-			string json;
-			string sep = "";
+		string FileName;
+		string json;
+		string sep = "";
 
-			FileName = filesetext("%(out_path)s", ".json");
+		FileName = filesetext("%(out_path)s", ".json");
 
-			output(FileName, "wt") {
-				printf("{\n");
-				printf("\t\"items\": [\n");
-				SCH.parts(P) {
-					if (P.device.package) {
-						json = sep + "\t\t{"
-							+   "\"prefix\": \""      + P.device.prefix   + "\", "
-							+   "\"designator\": \""  + P.name            + "\", "
-							+   "\"value\": \""       + P.value           + "\", "
-							+   "\"description\": \"" + P.device.headline + "\", "
-							+   "\"package\": \""     + P.device.package.name  + "\" "
-							+ "}";
-						sep = ",\n";
-						printf("%%s", json);
-					}
+		output(FileName, "wt") {
+			printf("{\n");
+			printf("\t\"items\": [\n");
+			SCH.parts(P) {
+				if (P.device.package) {
+					json = sep + "\t\t{"
+					+   "\"prefix\": \""      + P.device.prefix   + "\", "
+					+   "\"designator\": \""  + P.name            + "\", "
+					+   "\"value\": \""       + P.value           + "\", "
+					+   "\"description\": \"" + P.device.headline + "\", "
+					+   "\"package\": \""     + P.device.package.name  + "\" "
+					+ "}";
+					sep = ",\n";
+					printf("%%s", json);
 				}
-				printf("\n\t]\n}\n");
 			}
+			printf("\n\t]\n}\n");
 		}
-		"""
+	}
+	"""
 
 	def collapse_bom(self):
 		import json
@@ -157,7 +160,7 @@ class EagleBOMExport(EagleScriptExport):
 					with open(bom_path, 'w', newline='') as csvfile:
 						bom_writer = csv.writer(csvfile, dialect='excel', delimiter='	', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 						bom_writer.writerow(['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description'])
-						# d['R']['SMT0805']['0R'][1]
+						# d[<prefix>][<package>][<value>][1]
 						for prefix, packages in out_bom.items():
 							for package, items in packages.items():
 								for value, devices in items.items():
@@ -174,37 +177,37 @@ class EagleBOMExport(EagleScriptExport):
 					try:
 						from xlsxwriter.workbook import Workbook
 					except ImportError:
-						print("Please install xlsxwriter: `pip install xlsxwriter`")
+						log.error("Please install xlsxwriter: `pip install xlsxwriter`")
 						sys.exit(2)
-					try:
-						workbook = Workbook(bom_path)
-						title = workbook.add_format({'bold': True, 'bg_color': 'gray'})
-						bom_writer = workbook.add_worksheet()
-						bom_writer.set_column(0, 0, 4.50)
-						bom_writer.set_column(1, 1, 14.50)
-						bom_writer.set_column(2, 2, 16)
-						bom_writer.set_column(3, 3, 2)
-						bom_writer.set_column(4, 5, 50.00)
-						keys = ['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description']
-						for c, key in enumerate(keys):
-							bom_writer.write_string(0, c, key, title)
-						row_idx =1
-						for prefix, packages in out_bom.items():
-							for package, items in packages.items():
-								for value, devices in items.items():
-									range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
-									range_list = ",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list])
-									bom_writer.write(row_idx, 0, prefix)
-									bom_writer.write(row_idx, 1, package)
-									bom_writer.write(row_idx, 2, value)
-									bom_writer.write(row_idx, 3, str(len(devices)))
-									bom_writer.write(row_idx, 4, range_list)
-									bom_writer.write(row_idx, 5, devices[0]['description'])
-									row_idx += 1
-					finally:
-						workbook.close()
+						try:
+							workbook = Workbook(bom_path)
+							title = workbook.add_format({'bold': True, 'bg_color': 'gray'})
+							bom_writer = workbook.add_worksheet()
+							bom_writer.set_column(0, 0, 4.50)
+							bom_writer.set_column(1, 1, 14.50)
+							bom_writer.set_column(2, 2, 16)
+							bom_writer.set_column(3, 3, 2)
+							bom_writer.set_column(4, 5, 50.00)
+							keys = ['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description']
+							for c, key in enumerate(keys):
+								bom_writer.write_string(0, c, key, title)
+								row_idx =1
+								for prefix, packages in out_bom.items():
+									for package, items in packages.items():
+										for value, devices in items.items():
+											range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
+											range_list = ",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list])
+											bom_writer.write(row_idx, 0, prefix)
+											bom_writer.write(row_idx, 1, package)
+											bom_writer.write(row_idx, 2, value)
+											bom_writer.write(row_idx, 3, str(len(devices)))
+											bom_writer.write(row_idx, 4, range_list)
+											bom_writer.write(row_idx, 5, devices[0]['description'])
+											row_idx += 1
+						finally:
+							workbook.close()
 				elif '.xls' in bom_path:
-					print("TODO xls support!")
+					log.error("TODO xls support!")
 
 	def write_script(self, extension, layers, out_paths):
 		if extension != 'sch':
@@ -228,14 +231,13 @@ class EagleBOMExport(EagleScriptExport):
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
-		if self.verbose:
-			print("Info: Script path:", self.ulp_path)
-			print("Info: Raw bom output in:", os.path.join(self.ulp_dir, "bom.json"))
+		log.debug("Script path: {}".format(self.ulp_path))
+		log.debug("Raw bom output in {}".format(os.path.join(self.ulp_dir, "bom.json")))
 
 		return [
-            "DISPLAY ALL",
-            "RUN %s" % (self.ulp_path,)
-        ]
+			"DISPLAY ALL",
+			"RUN %s" % (self.ulp_path,)
+		]
 
 	def clean(self):
 		self.collapse_bom()
@@ -265,9 +267,10 @@ class EaglePDFExport(EagleScriptExport):
 		script = []
 
 		if extension == 'brd':
-			script += [	"DISPLAY ALL",
-					"RATSNEST"
-				]
+			script += [
+				"DISPLAY ALL",
+				"RATSNEST"
+			]
 		else:
 			raise BadExtension
 
@@ -275,10 +278,11 @@ class EaglePDFExport(EagleScriptExport):
 
 			ll = set(layer['layers']) | set(config.DOCUMENT_LAYERS)
 
-			script += [	"DISPLAY None",
-					"DISPLAY %s" % (' '.join(ll),),
-					"PRINT FILE %s BLACK SOLID" % (out_path,),
-				]
+			script += [
+				"DISPLAY None",
+				"DISPLAY %s" % (' '.join(ll),),
+				"PRINT FILE %s BLACK SOLID" % (out_path,),
+			]
 
 		return script
 
@@ -291,7 +295,7 @@ class EagleMountSMDExport(EagleScriptExport):
 	# Following ULP code based on "mountsmd.ulp" by CadSoft
 
 	ULP_TEMPLATE_HEAD = """
-		board(B) {
+	board(B) {
 		string fileName;
 	"""
 
@@ -302,10 +306,10 @@ class EagleMountSMDExport(EagleScriptExport):
 			B.elements(E) {
 
 				int wasSmd,
-					xmax =-2147483648,
-					xmin = 2147483647,
-					ymax = xmax,
-					ymin = xmin;
+				xmax =-2147483648,
+				xmin = 2147483647,
+				ymax = xmax,
+				ymin = xmin;
 
 				wasSmd = 0;
 
@@ -322,8 +326,8 @@ class EagleMountSMDExport(EagleScriptExport):
 
 				if (wasSmd)
 					printf("%%s %%5.2f %%5.2f %%3.0f %%s %%s\\n",
-					E.name, u2mm((xmin + xmax)/2), u2mm((ymin + ymax)/2),
-					E.angle, E.value, E.package.name);
+						E.name, u2mm((xmin + xmax)/2), u2mm((ymin + ymax)/2),
+						E.angle, E.value, E.package.name);
 			}
 		}
 	"""
@@ -356,11 +360,12 @@ class EagleMountSMDExport(EagleScriptExport):
 		ulp.write(self.ULP_TEMPLATE_TAIL)
 		ulp.close()
 
-		if self.verbose:
-			print(self.ulp_path)
+		log.debug("Script path: {}".format(self.ulp_path))
 
-		return [	"DISPLAY ALL",
-				"RUN %s" % (self.ulp_path,) ]
+		return [
+			"DISPLAY ALL",
+			"RUN %s" % (self.ulp_path,)
+		]
 
 	def clean(self):
 		os.unlink(self.ulp_path)
@@ -387,8 +392,8 @@ class EagleCAMExport:
 			options = ["-X", "-d" + self.DEVICE, "-o"  + out_path]
 			if layer.get('mirror'):
 				options.append("-m")
-			cmd = [config.EAGLE] + options + [in_path] + layer['layers']
-			subprocess.call(cmd)
+				cmd = [config.EAGLE] + options + [in_path] + layer['layers']
+				subprocess.call(cmd)
 
 class EagleGerberExport(EagleCAMExport):
 	DEVICE = "GERBER_RS274X"
@@ -413,8 +418,7 @@ def export_main(verbose=False):
 		layers=', '.join(config.LAYERS.keys())
 	))
 
-	if verbose:
-		print("Arguments:", args)
+	log.debug("Arguments: {}".format(repr(args)))
 
 	layers = []
 	out_paths = []
@@ -428,18 +432,18 @@ def export_main(verbose=False):
 		extension = args['<input>'].split('.')[-1].lower()
 		if extension == 'brd':
 			if layer_name is None:
-				print("Layer name required when exporting brd files")
+				log.error("Layer name required when exporting brd files")
 				sys.exit(1)
 
 			try:
 				layer = config.LAYERS[layer_name]
 			except KeyError:
-				print("Unknown layer: " + layer_name)
+				log.error("Unknown layer: " + layer_name)
 				sys.exit(1)
 		elif extension == 'sch':
 			layer = {'layers': ['ALL']}
 		else:
-			print("Bad extension %s: Eagle requires file names ending in sch or brd" % extension)
+			log.error("Bad extension %s: Eagle requires file names ending in sch or brd" % extension)
 			sys.exit(1)
 
 		layers.append(layer)
@@ -448,11 +452,11 @@ def export_main(verbose=False):
 	try:
 		export_class = out_types[args['<type>']]
 	except KeyError:
-		print("Unknown type: " + out_type)
+		log.error("Unknown type: " + out_type)
 		sys.exit(1)
 
 	export_class(verbose=verbose).export(args['<input>'], layers, out_paths)
 
 
 if __name__ == "__main__":
-    export_main()
+	export_main()
