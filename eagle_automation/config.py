@@ -24,7 +24,6 @@ def _set_value(self, key, val):
 	self.__dict__.update({key: val})
 
 def _read_config(self, path):
-	log.debug("Loading configuration: {}".format(path))
 	if os.path.exists(path):
 		data = load(stream, Loader=Loader)
 		self.__dict__.update(data)
@@ -40,7 +39,7 @@ def init():
 	for path in DEFAULT_CONFIG_PATHS:
 		try:
 			config.update(path)
-			log.debug("Configuration file '{}' found!".format(path))
+			log.debug("Loaded configuration: {}".format(path))
 		except:
 			log.debug("Configuration file '{}' not found".format(path))
 

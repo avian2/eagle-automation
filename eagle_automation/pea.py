@@ -74,7 +74,7 @@ def main():
     elif args['<command>'] in ['help', None]:
         exit(call(['python', sys.argv[0], '--help']))
     else:
-        exit("{} is not a {} command. See 'git help'.".format(args['<command>'], sys.argv[0]))
+        exit("{} is not a {base} command. See '{base} help'.".format(args['<command>'], base=sys.argv[0]))
 
 
 if __name__ == "__main__":
