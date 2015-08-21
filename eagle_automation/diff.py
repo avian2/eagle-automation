@@ -124,7 +124,7 @@ def diff_visual(from_file, to_file, page=0, output=None):
 			first = last = page
 
 		for page in range(first, last+1):
-			log.debug("Diff of page #{} of {}".format(page, last))
+			log.info("Checking page {} of {}".format(page, last))
 			a_im = to_png(from_file, page=page)
 			b_im = to_png(to_file, page=page)
 

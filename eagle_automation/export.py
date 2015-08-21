@@ -11,8 +11,10 @@ Options:
 	<output>              filename to export data to
 	<layer>               loyer to export data from, linked with the output file
 
-<type> can be any of:  {types}
-<layer> can be any of: {layers}
+<type> can be any of:
+    {types}
+<layer> can be any of:
+    {layers}
 
 """
 
@@ -179,35 +181,36 @@ class EagleBOMExport(EagleScriptExport):
 					except ImportError:
 						log.error("Please install xlsxwriter: `pip install xlsxwriter`")
 						sys.exit(2)
-						try:
-							workbook = Workbook(bom_path)
-							title = workbook.add_format({'bold': True, 'bg_color': 'gray'})
-							bom_writer = workbook.add_worksheet()
-							bom_writer.set_column(0, 0, 4.50)
-							bom_writer.set_column(1, 1, 14.50)
-							bom_writer.set_column(2, 2, 16)
-							bom_writer.set_column(3, 3, 2)
-							bom_writer.set_column(4, 5, 50.00)
-							keys = ['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description']
-							for c, key in enumerate(keys):
-								bom_writer.write_string(0, c, key, title)
-								row_idx =1
-								for prefix, packages in out_bom.items():
-									for package, items in packages.items():
-										for value, devices in items.items():
-											range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
-											range_list = ",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list])
-											bom_writer.write(row_idx, 0, prefix)
-											bom_writer.write(row_idx, 1, package)
-											bom_writer.write(row_idx, 2, value)
-											bom_writer.write(row_idx, 3, str(len(devices)))
-											bom_writer.write(row_idx, 4, range_list)
-											bom_writer.write(row_idx, 5, devices[0]['description'])
-											row_idx += 1
-						finally:
-							workbook.close()
+					try:
+						workbook = Workbook(bom_path)
+						title = workbook.add_format({'bold': True, 'bg_color': 'gray'})
+						bom_writer = workbook.add_worksheet()
+						bom_writer.set_column(0, 0, 4.50)
+						bom_writer.set_column(1, 1, 14.50)
+						bom_writer.set_column(2, 2, 16)
+						bom_writer.set_column(3, 3, 2)
+						bom_writer.set_column(4, 5, 50.00)
+						keys = ['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description']
+						for c, key in enumerate(keys):
+							bom_writer.write_string(0, c, key, title)
+							row_idx =1
+							for prefix, packages in out_bom.items():
+								for package, items in packages.items():
+									for value, devices in items.items():
+										range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
+										range_list = ",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list])
+										bom_writer.write(row_idx, 0, prefix)
+										bom_writer.write(row_idx, 1, package)
+										bom_writer.write(row_idx, 2, value)
+										bom_writer.write(row_idx, 3, str(len(devices)))
+										bom_writer.write(row_idx, 4, range_list)
+										bom_writer.write(row_idx, 5, devices[0]['description'])
+										row_idx += 1
+					finally:
+						workbook.close()
 				elif '.xls' in bom_path:
 					log.error("TODO xls support!")
+				log.info("BOM generated into {}".format(bom_path))
 
 	def write_script(self, extension, layers, out_paths):
 		if extension != 'sch':
@@ -452,7 +455,8 @@ def export_main(verbose=False):
 	try:
 		export_class = out_types[args['<type>']]
 	except KeyError:
-		log.error("Unknown type: " + out_type)
+		log.error("Unknown type: " + out_types[args['<type>']])
+		log.error("Use --help to look up usage.")
 		sys.exit(1)
 
 	export_class(verbose=verbose).export(args['<input>'], layers, out_paths)
