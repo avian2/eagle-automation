@@ -20,18 +20,34 @@ DEFAULT_CONFIG_PATHS = [
 ]
 
 
-def _set_value(self, key, val):
+def __set_value(self, key, val):
 	self.__dict__.update({key: val})
 
-def _read_config(self, path):
+def __merge_dict(a, b, path=None):
+    "merges b into a"
+    if path is None: path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass # same leaf value
+            else:
+                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+        else:
+            a[key] = b[key]
+    return a
+
+def __read_config(self, path):
 	if os.path.exists(path):
-		data = load(stream, Loader=Loader)
-		self.__dict__.update(data)
+		with open(path, 'r') as f:
+			data = load(f, Loader=Loader)
+			__merge_dict(self.__dict__, data)
 	else:
 		raise FileNotFoundError()
 
-Config.update = _read_config
-Config.insert = _set_value
+Config.update = __read_config
+Config.insert = __set_value
 
 config = Config()
 

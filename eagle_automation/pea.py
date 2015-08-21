@@ -50,16 +50,16 @@ def main():
 
     if args['-c']:
         for arg in args['-c']:
-            if '=' in args['-c']:
-                key, val = args['-c'].split('=')
+            if '=' in arg:
+                key, val = arg.split('=')
                 config.config.insert(key, val)
             else:
                 try:
-                    config.config.update(args['-c'])
-                except:
-                    log.error('Could not open file: {}'.format(args['-c']))
+                    config.config.update(arg)
+                except FileNotFoundError:
+                    log.error('Could not open file: {}'.format(arg))
 
-    log.debug('Configuration:\n{}'.format(repr(config.__dict__)))
+    log.debug('Configuration:\n{}'.format(repr(config.config.__dict__)))
 
     sys.argv = [sys.argv[0]] + [args['<command>']] + args['<args>']
     if args['<command>'] == 'export':
