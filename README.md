@@ -40,11 +40,11 @@ This repository currently contains the following:
 Installation
 ============
 
-From pipy, do:
+Using pypi, do:
 
     % pip install eagle_automation
 
-From the sources, run:
+Using the sources, run:
 
     % python setup.py install
     % git config --global --add difftool.eaglediff.cmd 'pea diff $LOCAL $REMOTE'
@@ -113,10 +113,23 @@ ones:
 
 	/etc/eagle_automation.conf
 	$HOME/.config/eagle_automation.conf
+	$HOME/.eagle_automation.conf
 	./eagle_automation.conf
+	./.eagle_automation.conf
 
-You can use the `eagle_automation/default.conf` file as a template.
+You can use the `skel/eagle_automation.conf` file as a template.
 
+You can specify configuration options on the commandline by giving `key=value` just
+after the `pea` command:
+
+    pea -c EAGLE=/usr/local/bin/eagle export example.sch bom example-bom.json
+
+And you can as well give configuration files the same way (only restriction: the configuration
+file shall not contain the character `=` or it will be interpreted as a key/value setting).
+
+e.g.:
+
+    pea -c ../config/pea.conf export example.sch bom example-bom.json
 
 
 Known problems
@@ -125,10 +138,6 @@ Known problems
 When exporting to PDF using `pea export`, default print settings are used.
 To set them, go to File -> Print setup, make changes, then quit Eagle so
 that the settings are saved.
-
-Exporting and diffing multi-page schematics doesn't work well. Only one page
-can be compared at a time and you have to specify the page number on the
-command line using --page.
 
 
 Contributors
