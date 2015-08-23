@@ -17,6 +17,25 @@ The commands are the following:
 
 See '{base} help <command>' for more information on a specific command.
 
+You can use an example configuration file, for an example, have a look at:
+
+    https://github.com/guyzmo/eagle-automation/blob/master/skel/eagle_automation.conf
+
+you can setup a config file with `-c` or by placing it into a known path:
+
+    /etc/eagle_automation.conf
+    $HOME/.config/eagle_automation.conf
+    $HOME/.eagle_automation.conf
+    ./eagle_automation.conf
+    ./.eagle_automation.conf
+
+Available configuration options
+
+    LAYERS
+    DOCUMENT_LAYERS
+    EAGLE
+    DPI
+
 Copyright (C) 2015  Bernard Pratz <guyzmo+github@m0g.net>
 Copyright (C) 2014  Tomaz Solc <tomaz.solc@tablix.org>
 Distributed under GPL license.
@@ -57,7 +76,7 @@ def main():
                 try:
                     config.config.update(arg)
                 except FileNotFoundError:
-                    log.error('Could not open file: {}'.format(arg))
+                    log.error('Could not open configuration file: {}'.format(arg))
 
     log.debug('Configuration:\n{}'.format(repr(config.config.__dict__)))
 

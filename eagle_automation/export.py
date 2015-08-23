@@ -69,7 +69,13 @@ class EagleScriptExport:
 		script_string = ';'.join(script)
 
 		cmd = [config.EAGLE, "-C" + script_string, in_path]
-		subprocess.call(cmd)
+		try:
+			subprocess.call(cmd)
+		except FileNotFoundError:
+			print("Eagle executable `{}` not found".format(config.EAGLE))
+			print("Please check your configuration file or `-c` parameter.")
+			print("See --help for more details")
+			sys.exit(4)
 
 		self.clean()
 
