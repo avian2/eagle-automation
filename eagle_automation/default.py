@@ -1,5 +1,18 @@
 # Default configuration file for eagle_automation.
 
+import sys
+import glob
+
+if 'darwin' == sys.platform:
+    eagle_bin = glob.glob('/Applications/EAGLE*/EAGLE.app/Contents/MacOS/EAGLE')[-1]
+    open_bin = '/usr/bin/open'
+elif 'linux' == sys.platform:
+    eagle_bin = glob.glob('/usr/local/eagle*/bin/eagle')[-1]
+    open_bin = '/usr/bin/xdg-open'
+elif 'win32' == sys.platform:
+    eagle_bin = 'c:/program files/EAGLE*/eagle.exe'
+    open_bin = 'start'
+
 # LAYERS dictionary provides mapping between Eagle layers and export layers (as
 # used by "eagleexport").
 #
@@ -83,8 +96,11 @@ class Config:
     DOCUMENT_LAYERS = ['Dimension', 'Document']
 
 # Path to Eagle binary to use.
-    EAGLE = "eagle"
+    EAGLE = eagle_bin
 
 # DPI for bitmap exports.
     DPI = 400
+
+# General OS-wide open file utility
+    OPEN = open_bin
 
