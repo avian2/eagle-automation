@@ -165,7 +165,7 @@ class EagleBOMExport(EagleScriptExport):
 						out.write(json.dumps(out_bom))
 
 				elif '.csv' in bom_path:
-					with open(bom_path, 'w', newline='') as csvfile:
+					with open(bom_path, 'w') as csvfile:
 						bom_writer = csv.writer(csvfile, dialect='excel', delimiter='	', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 						bom_writer.writerow(['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description'])
 						# d[<prefix>][<package>][<value>][1]
