@@ -68,7 +68,7 @@ class Config:
         },
 
         'measures': {
-            'layers': ['LayerStackup', 'DrillLegend', 'Measures'],
+            'layers': ['DrillLegend', 'Measures'],
         },
 
         'drills': {
