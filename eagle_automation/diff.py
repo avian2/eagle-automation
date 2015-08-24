@@ -23,6 +23,7 @@ import sys
 import docopt
 import difflib
 import tempfile
+import subprocess
 
 import logging
 log = logging.getLogger('pea').getChild(__name__)
@@ -97,29 +98,38 @@ def pdf_concatenate(fname, files):
 		output.write(f)
 
 def diff_visual(from_file, to_file, page=0, output=None):
-	# TODO use with syntax
-	try:
+	with tempfile.TemporaryDirectory() as workdir:
 		workdir = tempfile.mkdtemp()
 		pages = []
 		first = last = 1
+		preview = False
 
 		if not output:
-			output = "{from_file}-{to_file}.pdf".format(from_file=os.path.basename(from_file).split('.')[0],
-														to_file=os.path.basename(to_file).split('.')[0])
+			output = os.path.join(
+						workdir,
+						"{from_file}-{to_file}.pdf".format(from_file=os.path.basename(from_file).split('.')[0],
+															to_file=os.path.basename(to_file).split('.')[0])
+			)
+			preview = True
 
 		if not page:
-			with open(from_file) as _from:
-				with open(to_file) as _to:
-					_from = _from.read()
-					_to = _to.read()
-					# TODO use pyeagle!
-					if not '<schematic' in _from and not '<board' in _from:
-						raise SyntaxError('File {} is not an eagle/xml design file!'.format(from_file))
-					if not '<schematic' in _to and not '<board' in _to:
-						raise SyntaxError('File {} is not an eagle/xml design file!'.format(to_file))
-					if not _from.count('<sheet>') == _to.count('<sheet>'):
-						raise Exception('File {} does not have the same number of sheets as {}'.format(from_file, to_file))
-					last = _from.count('<sheet>') or _from.count('<board')
+			try:
+				with open(from_file) as _from:
+					with open(to_file) as _to:
+						_from = _from.read()
+						_to = _to.read()
+						# TODO use pyeagle!
+						if not '<schematic' in _from and not '<board' in _from:
+							raise SyntaxError('File {} is not an eagle/xml design file!'.format(from_file))
+						if not '<schematic' in _to and not '<board' in _to:
+							raise SyntaxError('File {} is not an eagle/xml design file!'.format(to_file))
+						if not _from.count('<sheet>') == _to.count('<sheet>'):
+							raise Exception('File {} does not have the same number of sheets as {}'.format(from_file, to_file))
+						last = _from.count('<sheet>') or _from.count('<board')
+			except Exception as err:
+				log.warning(err.message)
+				log.warning("Considering file as an Eagle v5 binary format.")
+				first = last = page
 		else:
 			first = last = page
 
@@ -156,15 +166,21 @@ def diff_visual(from_file, to_file, page=0, output=None):
 																							page=page)
 			im.save(os.path.join(workdir, fname))
 			pages.append(os.path.join(workdir, fname))
+
 		if len(pages) > 0:
 			pdf_concatenate(output, pages)
 			log.info("Diff output in file: {}".format(output))
+			if preview:
+				try:
+					subprocess.call([config.OPEN, output])
+				except FileNotFoundError as err:
+					log.warning("Cannot find open utility: `{}`".format(config.OPEN))
+					log.warning("Open your file manually to check it")
+				input("Press enter to flush all outputs")
 		else:
 			log.error("No diff output.")
-	finally:
-		for page in pages:
-			os.unlink(page)
-		os.rmdir(workdir)
+
+		workdir.cleanup()
 
 def diff_text(from_file, to_file):
 	a_txt = to_txt(from_file)
