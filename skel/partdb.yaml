@@ -1,0 +1,40 @@
+100000_TEST:
+    Description: 10kΩ 50V 5%
+    Category: Resistor
+    Preferred: { Status: Active   , Manufacturer: any               , Reference: any              }
+    Alternatives:
+100001_TEST:
+    Description: 6.2kΩ 50V 1%
+    Category: Resistor
+    Preferred: { Status: Active   , Manufacturer: any               , Reference: any              }
+    Alternatives:
+200000_TEST:
+    Description: 100nF 50V X5R 1%
+    Category: Capacitor
+    Preferred: { Status: Active   , Manufacturer: any               , Reference: any              }
+    Alternatives:
+200001_TEST:
+    Description: 10µF 16V X5R 1%
+    Category: Capacitor
+    Preferred: { Status: Active   , Manufacturer: any               , Reference: any              }
+    Alternatives:
+600002_TEST:
+    Description: Single Schmitt Trigger buffer
+    Category: IC
+    Preferred: { Status: Active   , Manufacturer: TI                , Reference: SN74LVC1G17      }
+    Alternatives:
+        - {      Status: Active   , Manufacturer: NXP               , Reference: 74AUP1G17GW      }
+600000_TEST:
+    Description: Simple Analog Switch
+    Category: IC
+    Preferred: { Status: Active   , Manufacturer: TI                , Reference: SN74LVC1G66      }
+    Alternatives:
+        - {      Status: Active   , Manufacturer: NXP               , Reference: 74HC1G66GW       }
+        - {      Status: Active   , Manufacturer: ON Semiconductors , Reference: MC74VHC1G66DFT2G }
+900000_TEST:
+    Description: WR-WTB 2.00mm SMT Male Horizontal Shrouded header 2 pins
+    Category: IC
+    Preferred: { Status: Active   , Manufacturer: Wűrth             , Reference: 602 104 131 822  }
+    Alternatives:
+        - {      Status: Active   , Manufacturer: Molex             , Reference: 502352-0200      }
+        - {      Status: Active   , Manufacturer: JST               , Reference: S2B-PH-K-S       }
