@@ -38,11 +38,16 @@ import logging
 log = logging.getLogger('pea').getChild(__name__)
 
 
+class EagleExport:
+    registered_command = dict()
 
-
-
-
-out_types = dict()
+    @classmethod
+    def register(cls, *args, **kwarg):
+        def wrapper(klass):
+            for command in args:
+                cls.registered_command[command] = klass
+            return klass
+        return wrapper
 
 
 class PyEagleExport:
@@ -96,6 +101,7 @@ class EagleScriptExport:
         pass
 
 
+@EagleExport.register('png')
 class EaglePNGExport(EagleScriptExport):
     _page = 1
 
@@ -130,9 +136,7 @@ class EaglePNGExport(EagleScriptExport):
         return script
 
 
-out_types['png'] = EaglePNGExport
-
-
+@EagleExport.register('old_bom')
 class EagleScriptBOMExport(EagleScriptExport):
     ULP_TEMPLATE_HEAD = ""
     ULP_TEMPLATE_TAIL = ""
@@ -234,6 +238,7 @@ class EagleScriptBOMExport(EagleScriptExport):
             os.rmdir(self.ulp_dir)
 
 
+@EagleExport.register('py_bom')
 class PyEagleBOMExport(PyEagleExport):
     def export(self, in_path, layers, out_paths):
         db = PartDatabase(config.partdb)
@@ -255,6 +260,7 @@ class PyEagleBOMExport(PyEagleExport):
         log.info("Successfully wrote BOM into {}".format(", ".join(out_paths)))
 
 
+@EagleExport.register('bom')
 class EagleBOMExport():
     def __init__(self, workdir=None, verbose=False):
         self.workdir = workdir
@@ -273,11 +279,6 @@ class EagleBOMExport():
         pass
 
 
-out_types['bom'] = EagleBOMExport
-out_types['py_bom'] = PyEagleBOMExport
-out_types['old_bom'] = EagleScriptBOMExport
-
-
 class EagleDirectoryExport(EagleScriptExport):
     def write_script(self, extension, layers, out_paths):
         if extension != 'lbr':
@@ -290,6 +291,7 @@ class EagleDirectoryExport(EagleScriptExport):
         return script
 
 
+@EagleExport.register('pdf')
 class EaglePDFExport(EagleScriptExport):
     def write_script(self, extension, layers, out_paths):
 
@@ -316,9 +318,7 @@ class EaglePDFExport(EagleScriptExport):
         return script
 
 
-out_types['pdf'] = EaglePDFExport
-
-
+@EagleExport.register('mountsmd')
 class EagleMountSMDExport(EagleScriptExport):
 
     # Following ULP code based on "mountsmd.ulp" by CadSoft
@@ -402,9 +402,6 @@ class EagleMountSMDExport(EagleScriptExport):
             os.rmdir(self.ulp_dir)
 
 
-out_types['mountsmd'] = EagleMountSMDExport
-
-
 class EagleCAMExport:
     def __init__(self, workdir=None, verbose=False):
         self.verbose = verbose
@@ -425,27 +422,23 @@ class EagleCAMExport:
                 subprocess.call(cmd)
 
 
+@EagleExport.register('gerber')
 class EagleGerberExport(EagleCAMExport):
     DEVICE = "GERBER_RS274X"
 
 
-out_types['gerber'] = EagleGerberExport
-
-
+@EagleExport.register('excellon')
 class EagleExcellonExport(EagleCAMExport):
     DEVICE = "EXCELLON"
 
-
-out_types['excellon'] = EagleExcellonExport
-
-
 ################################################################################
+
 
 def export_main(verbose=False):
     args = docopt.docopt(__doc__.format(
         base=sys.argv[0],
         command=sys.argv[1],
-        types=', '.join(out_types.keys()),
+        types=', '.join(EagleExport.registered_command.keys()),
         layers=', '.join(config.LAYERS.keys())
     ))
 
@@ -481,9 +474,9 @@ def export_main(verbose=False):
         out_paths.append(out_path)
 
     try:
-        export_class = out_types[args['<type>']]
+        export_class = EagleExport.registered_command[args['<type>']]
     except KeyError:
-        log.error("Unknown type: " + out_types[args['<type>']])
+        log.error("Unknown type: " + EagleExport.registered_command[args['<type>']])
         log.error("Use --help to look up usage.")
         sys.exit(1)
 
