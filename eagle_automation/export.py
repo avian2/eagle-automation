@@ -6,10 +6,10 @@ Copyright (C) 2015  Bernard Pratz <guyzmo+pea@m0g.net>
 Usage: {base} {command} <input> <type> [<output>:<layer> ...]
 
 Options:
-	<input>               .brd, .sch or .lbr file to extract data from
-	<type>                chosen output type
-	<output>              filename to export data to
-	<layer>               loyer to export data from, linked with the output file
+    <input>               .brd, .sch or .lbr file to extract data from
+    <type>                chosen output type
+    <output>              filename to export data to
+    <layer>               loyer to export data from, linked with the output file
 
 <type> can be any of:
     {types}
@@ -42,74 +42,92 @@ log = logging.getLogger('pea').getChild(__name__)
 
 
 
-out_types=dict()
+out_types = dict()
+
+
+class PyEagleExport:
+    def __init__(self, workdir=None, verbose=False):
+        self.workdir = workdir
+        self.verbose = verbose
+
+    def export(self, in_path, layers, out_paths):
+        pass
+
+    def clean(self):
+        pass
+
 
 class EagleScriptExport:
-	def __init__(self, workdir=None, verbose=False):
-		self.workdir = workdir
-		self.verbose = verbose
+    def __init__(self, workdir=None, verbose=False):
+        self.workdir = workdir
+        self.verbose = verbose
 
-	def export(self, in_path, layers, out_paths):
+    def export(self, in_path, layers, out_paths):
 
-		open(in_path, "rb").close()
+        open(in_path, "rb").close()
 
-		extension = get_extension(in_path)
-		script = self.write_script(extension, layers, out_paths)
+        extension = get_extension(in_path)
+        script = self.write_script(extension, layers, out_paths)
 
-		for out_path in out_paths:
-			# to stop Eagle trowing up dialogs that
-			# files already exist
-			try:
-				os.unlink(out_path)
-			except OSError:
-				pass
+        for out_path in out_paths:
+            # to stop Eagle trowing up dialogs that
+            # files already exist
+            try:
+                os.unlink(out_path)
+            except OSError:
+                pass
 
-		script += ['QUIT']
+        script += ['QUIT']
 
-		script_string = ';'.join(script)
+        script_string = ';'.join(script)
 
-		cmd = [config.EAGLE, "-C" + script_string, in_path]
-		try:
-			subprocess.call(cmd)
-		except FileNotFoundError:
-			print("Eagle executable `{}` not found".format(config.EAGLE))
-			print("Please check your configuration file or `-c` parameter.")
-			print("See --help for more details")
-			sys.exit(4)
+        cmd = [config.EAGLE, "-C" + script_string, in_path]
+        try:
+            subprocess.call(cmd)
+        except FileNotFoundError:
+            log.error("Eagle executable `{}` not found".format(config.EAGLE))
+            log.error("Please check your configuration file or `-c` parameter.")
+            log.error("See --help for more details")
+            sys.exit(4)
 
-		self.clean()
+        self.clean()
 
-	def clean(self):
-		pass
+    def clean(self):
+        pass
+
 
 class EaglePNGExport(EagleScriptExport):
-	_page = 1
+    _page = 1
 
-	def set_page(self, page):
-		self._page = page
+    def set_page(self, page):
+        self._page = page
 
-	def write_script(self, extension, layers, out_paths):
+    def write_script(self, extension, layers, out_paths):
 
-		script = []
+        script = []
 
-		if extension == 'brd':
-			script += [	"DISPLAY ALL",
-						"RATSNEST"
-			]
-		elif extension == 'sch':
-			script += [	"EDIT .s%d" % self._page ]
-		else:
-			raise BadExtension
+        if extension == 'brd':
+            script += [
+                "DISPLAY ALL",
+                "RATSNEST"
+            ]
+        elif extension == 'sch':
+            script += [
+                "EDIT .s%d" % self._page
+            ]
+        else:
+            raise BadExtension
 
-		for layer, out_path in zip(layers, out_paths):
-			assert out_path.endswith(".png")
+        for layer, out_path in zip(layers, out_paths):
+            assert out_path.endswith(".png")
 
-			script += [	"DISPLAY None",
-						"DISPLAY %s" % (' '.join(layer['layers']),),
-						"EXPORT IMAGE %s MONOCHROME %d" % (out_path, config.DPI)
-			]
+            script += [
+                "DISPLAY None",
+                "DISPLAY %s" % (' '.join(layer['layers']),),
+                "EXPORT IMAGE %s MONOCHROME %d" % (out_path, config.DPI)
+            ]
 
-		return script
+        return script
 
 
 out_types['png'] = EaglePNGExport
@@ -260,40 +278,41 @@ out_types['bom'] = EagleBOMExport
 
 
 class EagleDirectoryExport(EagleScriptExport):
+    def write_script(self, extension, layers, out_paths):
+        if extension != 'lbr':
+            raise BadExtension
 
-	def write_script(self, extension, layers, out_paths):
+        script = [
+            "EXPORT DIRECTORY %s" % out_paths[0]
+        ]
 
-		if extension != 'lbr':
-			raise BadExtension
+        return script
 
-		script = [	"EXPORT DIRECTORY %s" % out_paths[0] ]
-
-		return script
 
 class EaglePDFExport(EagleScriptExport):
-	def write_script(self, extension, layers, out_paths):
+    def write_script(self, extension, layers, out_paths):
 
-		script = []
+        script = []
 
-		if extension == 'brd':
-			script += [
-				"DISPLAY ALL",
-				"RATSNEST"
-			]
-		else:
-			raise BadExtension
+        if extension == 'brd':
+            script += [
+                "DISPLAY ALL",
+                "RATSNEST"
+            ]
+        else:
+            raise BadExtension
 
-		for layer, out_path in zip(layers, out_paths):
+        for layer, out_path in zip(layers, out_paths):
 
-			ll = set(layer['layers']) | set(config.DOCUMENT_LAYERS)
+            ll = set(layer['layers']) | set(config.DOCUMENT_LAYERS)
 
-			script += [
-				"DISPLAY None",
-				"DISPLAY %s" % (' '.join(ll),),
-				"PRINT FILE %s BLACK SOLID" % (out_path,),
-			]
+            script += [
+                "DISPLAY None",
+                "DISPLAY %s" % (' '.join(ll),),
+                "PRINT FILE %s BLACK SOLID" % (out_path,),
+            ]
 
-		return script
+        return script
 
 
 out_types['pdf'] = EaglePDFExport
@@ -301,117 +320,119 @@ out_types['pdf'] = EaglePDFExport
 
 class EagleMountSMDExport(EagleScriptExport):
 
-	# Following ULP code based on "mountsmd.ulp" by CadSoft
+    # Following ULP code based on "mountsmd.ulp" by CadSoft
 
-	ULP_TEMPLATE_HEAD = """
-	board(B) {
-		string fileName;
-	"""
+    ULP_TEMPLATE_HEAD = """
+    board(B) {
+        string fileName;
+    """
 
-	ULP_TEMPLATE = """
-		fileName = "%(out_path)s";
-		output(fileName) {
+    ULP_TEMPLATE = """
+        fileName = "%(out_path)s";
+        output(fileName) {
 
-			B.elements(E) {
+            B.elements(E) {
 
-				int wasSmd,
-				xmax =-2147483648,
-				xmin = 2147483647,
-				ymax = xmax,
-				ymin = xmin;
+                int wasSmd,
+                xmax =-2147483648,
+                xmin = 2147483647,
+                ymax = xmax,
+                ymin = xmin;
 
-				wasSmd = 0;
+                wasSmd = 0;
 
-				E.package.contacts(C) {
-					if (C.smd && C.smd.layer == %(pp_id)d) {
-						wasSmd = 1;
+                E.package.contacts(C) {
+                    if (C.smd && C.smd.layer == %(pp_id)d) {
+                        wasSmd = 1;
 
-						if (C.x > xmax) xmax = C.x;
-						if (C.y > ymax) ymax = C.y;
-						if (C.x < xmin) xmin = C.x;
-						if (C.y < ymin) ymin = C.y;
-					}
-				}
+                        if (C.x > xmax) xmax = C.x;
+                        if (C.y > ymax) ymax = C.y;
+                        if (C.x < xmin) xmin = C.x;
+                        if (C.y < ymin) ymin = C.y;
+                    }
+                }
 
-				if (wasSmd)
-					printf("%%s %%5.2f %%5.2f %%3.0f %%s %%s\\n",
-						E.name, u2mm((xmin + xmax)/2), u2mm((ymin + ymax)/2),
-						E.angle, E.value, E.package.name);
-			}
-		}
-	"""
+                if (wasSmd)
+                    printf("%%s %%5.2f %%5.2f %%3.0f %%s %%s\\n",
+                        E.name, u2mm((xmin + xmax)/2), u2mm((ymin + ymax)/2),
+                        E.angle, E.value, E.package.name);
+            }
+        }
+    """
 
-	ULP_TEMPLATE_TAIL = """
-	}
-	"""
+    ULP_TEMPLATE_TAIL = """
+    }
+    """
 
-	def write_script(self, extension, layers, out_paths):
+    def write_script(self, extension, layers, out_paths):
 
-		if extension != 'brd':
-			raise BadExtension
+        if extension != 'brd':
+            raise BadExtension
 
-		self.ulp_dir = self.workdir or tempfile.mkdtemp()
-		self.ulp_path = os.path.join(self.ulp_dir, "export.ulp")
+        self.ulp_dir = self.workdir or tempfile.mkdtemp()
+        self.ulp_path = os.path.join(self.ulp_dir, "export.ulp")
 
-		ulp = open(self.ulp_path, "w")
-		ulp.write(self.ULP_TEMPLATE_HEAD)
+        ulp = open(self.ulp_path, "w")
+        ulp.write(self.ULP_TEMPLATE_HEAD)
 
-		for layer, out_path in zip(layers, out_paths):
+        for layer, out_path in zip(layers, out_paths):
 
-			pp_id = layer['pp_id']
+            pp_id = layer['pp_id']
 
-			assert '"' not in out_path
-			ulp.write(self.ULP_TEMPLATE % {
-				'out_path': out_path,
-				'pp_id': pp_id
-			})
+            assert '"' not in out_path
+            ulp.write(self.ULP_TEMPLATE % {
+                'out_path': out_path,
+                'pp_id': pp_id
+            })
 
-		ulp.write(self.ULP_TEMPLATE_TAIL)
-		ulp.close()
+        ulp.write(self.ULP_TEMPLATE_TAIL)
+        ulp.close()
 
-		log.debug("Script path: {}".format(self.ulp_path))
+        log.debug("Script path: {}".format(self.ulp_path))
 
-		return [
-			"DISPLAY ALL",
-			"RUN %s" % (self.ulp_path,)
-		]
+        return [
+            "DISPLAY ALL",
+            "RUN %s" % (self.ulp_path,)
+        ]
 
-	def clean(self):
-		os.unlink(self.ulp_path)
-		if not self.workdir:
-			os.rmdir(self.ulp_dir)
+    def clean(self):
+        os.unlink(self.ulp_path)
+        if not self.workdir:
+            os.rmdir(self.ulp_dir)
 
 
 out_types['mountsmd'] = EagleMountSMDExport
 
 
 class EagleCAMExport:
-	def __init__(self, workdir=None, verbose=False):
-		self.verbose = verbose
+    def __init__(self, workdir=None, verbose=False):
+        self.verbose = verbose
 
-	def export(self, in_path, layers, out_paths):
+    def export(self, in_path, layers, out_paths):
 
-		open(in_path, "rb").close()
+        open(in_path, "rb").close()
 
-		extension = get_extension(in_path)
-		if extension != 'brd':
-			raise BadExtension
+        extension = get_extension(in_path)
+        if extension != 'brd':
+            raise BadExtension
 
-		for layer, out_path in zip(layers, out_paths):
-			options = ["-X", "-d" + self.DEVICE, "-o"  + out_path]
-			if layer.get('mirror'):
-				options.append("-m")
-				cmd = [config.EAGLE] + options + [in_path] + layer['layers']
-				subprocess.call(cmd)
+        for layer, out_path in zip(layers, out_paths):
+            options = ["-X", "-d" + self.DEVICE, "-o" + out_path]
+            if layer.get('mirror'):
+                options.append("-m")
+                cmd = [config.EAGLE] + options + [in_path] + layer['layers']
+                subprocess.call(cmd)
+
 
 class EagleGerberExport(EagleCAMExport):
-	DEVICE = "GERBER_RS274X"
+    DEVICE = "GERBER_RS274X"
 
 
 out_types['gerber'] = EagleGerberExport
 
+
 class EagleExcellonExport(EagleCAMExport):
-	DEVICE = "EXCELLON"
+    DEVICE = "EXCELLON"
 
 
 out_types['excellon'] = EagleExcellonExport
@@ -420,53 +441,53 @@ out_types['excellon'] = EagleExcellonExport
 ################################################################################
 
 def export_main(verbose=False):
-	args = docopt.docopt(__doc__.format(
-		base=sys.argv[0],
-		command=sys.argv[1],
-		types=', '.join(out_types.keys()),
-		layers=', '.join(config.LAYERS.keys())
-	))
+    args = docopt.docopt(__doc__.format(
+        base=sys.argv[0],
+        command=sys.argv[1],
+        types=', '.join(out_types.keys()),
+        layers=', '.join(config.LAYERS.keys())
+    ))
 
-	log.debug("Arguments:\n{}".format(repr(args)))
+    log.debug("Arguments:\n{}".format(repr(args)))
 
-	layers = []
-	out_paths = []
-	for arg in args['<output>:<layer>']:
-		try:
-			out_path, layer_name = arg.split(":")
-		except ValueError:
-			out_path = arg
-			layer_name = None
+    layers = []
+    out_paths = []
+    for arg in args['<output>:<layer>']:
+        try:
+            out_path, layer_name = arg.split(":")
+        except ValueError:
+            out_path = arg
+            layer_name = None
 
-		extension = args['<input>'].split('.')[-1].lower()
-		if extension == 'brd':
-			if layer_name is None:
-				log.error("Layer name required when exporting brd files")
-				sys.exit(1)
+        extension = args['<input>'].split('.')[-1].lower()
+        if extension == 'brd':
+            if layer_name is None:
+                log.error("Layer name required when exporting brd files")
+                sys.exit(1)
 
-			try:
-				layer = config.LAYERS[layer_name]
-			except KeyError:
-				log.error("Unknown layer: " + layer_name)
-				sys.exit(1)
-		elif extension == 'sch':
-			layer = {'layers': ['ALL']}
-		else:
-			log.error("Bad extension %s: Eagle requires file names ending in sch or brd" % extension)
-			sys.exit(1)
+            try:
+                layer = config.LAYERS[layer_name]
+            except KeyError:
+                log.error("Unknown layer: " + layer_name)
+                sys.exit(1)
+        elif extension == 'sch':
+            layer = {'layers': ['ALL']}
+        else:
+            log.error("Bad extension %s: Eagle requires file names ending in sch or brd" % extension)
+            sys.exit(1)
 
-		layers.append(layer)
-		out_paths.append(out_path)
+        layers.append(layer)
+        out_paths.append(out_path)
 
-	try:
-		export_class = out_types[args['<type>']]
-	except KeyError:
-		log.error("Unknown type: " + out_types[args['<type>']])
-		log.error("Use --help to look up usage.")
-		sys.exit(1)
+    try:
+        export_class = out_types[args['<type>']]
+    except KeyError:
+        log.error("Unknown type: " + out_types[args['<type>']])
+        log.error("Use --help to look up usage.")
+        sys.exit(1)
 
-	export_class(verbose=verbose).export(args['<input>'], layers, out_paths)
+    export_class(verbose=verbose).export(args['<input>'], layers, out_paths)
 
 
 if __name__ == "__main__":
-	export_main()
+    export_main()
