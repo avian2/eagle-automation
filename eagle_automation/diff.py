@@ -34,53 +34,49 @@ from eagle_automation.config import config
 from eagle_automation.export import get_extension, BadExtension, EaglePNGExport, EagleDirectoryExport
 
 def to_png(in_path, page):
+	with tempfile.TemporaryDirectory() as workdir:
+        extension = in_path.split('.')[-1].lower()
+        if extension == 'brd':
+            layers = config.LAYERS.values()
+            out_paths = [	os.path.join(workdir, layer + '.png')
+                    for layer in config.LAYERS.keys() ]
+        elif extension == 'sch':
+            layers = [{'layers': ['ALL']}]
+            out_paths = [os.path.join(workdir, 'all.png')]
+        else:
+            os.rmdir(workdir)
+            raise BadExtension
 
-	workdir = tempfile.mkdtemp()
+        export = EaglePNGExport(workdir=workdir)
+        export.set_page(page)
+        export.export(in_path, layers, out_paths)
 
-	extension = in_path.split('.')[-1].lower()
-	if extension == 'brd':
-		layers = config.LAYERS.values()
-		out_paths = [	os.path.join(workdir, layer + '.png')
-				for layer in config.LAYERS.keys() ]
-	elif extension == 'sch':
-		layers = [{'layers': ['ALL']}]
-		out_paths = [os.path.join(workdir, 'all.png')]
-	else:
-		os.rmdir(workdir)
-		raise BadExtension
+        oim = None
+        for i, out_path in enumerate(out_paths):
+            im = Image.open(out_path).convert("L")
+            if oim is None:
+                oim = im
+            else:
+                oim = Image.blend(oim, im, 1.0/(1.0+i))
 
-	export = EaglePNGExport(workdir=workdir)
-	export.set_page(page)
-	export.export(in_path, layers, out_paths)
+            os.unlink(out_path)
 
-	oim = None
-	for i, out_path in enumerate(out_paths):
-		im = Image.open(out_path).convert("L")
-		if oim is None:
-			oim = im
-		else:
-			oim = Image.blend(oim, im, 1.0/(1.0+i))
+		workdir.cleanup()
 
-		os.unlink(out_path)
-
-	os.rmdir(workdir)
-
-	return oim
+        return oim
 
 def to_txt(in_path):
-	workdir = tempfile.mkdtemp()
+	with tempfile.TemporaryDirectory() as workdir:
+        out_path = os.path.join(workdir, "out.txt")
 
-	out_path = os.path.join(workdir, "out.txt")
+        export = EagleDirectoryExport()
+        export.export(in_path, None, [ out_path ])
 
-	export = EagleDirectoryExport()
-	export.export(in_path, None, [ out_path ])
+        directory = open(out_path).read()
 
-	directory = open(out_path).read()
+		workdir.cleanup()
 
-	os.unlink(out_path)
-	os.rmdir(workdir)
-
-	return directory
+        return directory
 
 
 def pdf_concatenate(fname, files):
@@ -99,7 +95,6 @@ def pdf_concatenate(fname, files):
 
 def diff_visual(from_file, to_file, page=0, output=None):
 	with tempfile.TemporaryDirectory() as workdir:
-		workdir = tempfile.mkdtemp()
 		pages = []
 		first = last = 1
 		preview = False
