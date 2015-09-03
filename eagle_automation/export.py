@@ -18,28 +18,28 @@ Options:
 
 """
 
-from eagle_automation.config import config
+from __future__ import print_function
+
 import os
 import re
 import sys
+import json
 import docopt
 import tempfile
-import itertools
 import subprocess
+
+from .config import config
+from .components import PartDatabase
+from .bom_output import BOMWriter
+from .common import get_extension, ranges
+from .exceptions import FileNotFoundError, BadExtension
 
 import logging
 log = logging.getLogger('pea').getChild(__name__)
 
-def ranges(i):
-	for a, b in itertools.groupby(enumerate(i), lambda t: t[1] - t[0]):
-		b = list(b)
-		yield b[0][1], b[-1][1]
 
 
-def get_extension(path):
-	return path.split(os.extsep)[-1].lower()
 
-class BadExtension: Exception
 
 
 out_types=dict()
