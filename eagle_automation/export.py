@@ -132,149 +132,150 @@ class EaglePNGExport(EagleScriptExport):
 
 out_types['png'] = EaglePNGExport
 
-class EagleBOMExport(EagleScriptExport):
-	ULP_TEMPLATE_HEAD = ""
-	ULP_TEMPLATE_TAIL = ""
-	ULP_TEMPLATE = r"""
-	schematic(SCH) {
 
-		string FileName;
-		string json;
-		string sep = "";
+class EagleScriptBOMExport(EagleScriptExport):
+    ULP_TEMPLATE_HEAD = ""
+    ULP_TEMPLATE_TAIL = ""
+    ULP_TEMPLATE = r"""
+    schematic(SCH) {
 
-		FileName = filesetext("%(out_path)s", ".json");
+        string FileName;
+        string json;
+        string sep = "";
 
-		output(FileName, "wt") {
-			printf("{\n");
-			printf("\t\"items\": [\n");
-			SCH.parts(P) {
-				if (P.device.package) {
-					json = sep + "\t\t{"
-					+   "\"prefix\": \""      + P.device.prefix   + "\", "
-					+   "\"designator\": \""  + P.name            + "\", "
-					+   "\"value\": \""       + P.value           + "\", "
-					+   "\"description\": \"" + P.device.headline + "\", "
-					+   "\"package\": \""     + P.device.package.name  + "\" "
-					+ "}";
-					sep = ",\n";
-					printf("%%s", json);
-				}
-			}
-			printf("\n\t]\n}\n");
-		}
-	}
-	"""
+        FileName = filesetext("%(out_path)s", ".json");
 
-	def collapse_bom(self):
-		import json
-		import csv
+        output(FileName, "wt") {
+            printf("{\n");
+            printf("\t\"items\": [\n");
+            SCH.parts(P) {
+                if (P.device.package) {
+                    json = sep + "\t\t{"
+                    +   "\"prefix\": \""      + P.device.prefix   + "\", "
+                    +   "\"designator\": \""  + P.name            + "\", "
+                    +   "\"value\": \""       + P.value           + "\", "
+                    +   "\"description\": \"" + P.device.headline + "\", "
+                    +   "\"package\": \""     + P.device.package.name  + "\" "
+                    + "}";
+                    sep = ",\n";
+                    printf("%%s", json);
+                }
+            }
+            printf("\n\t]\n}\n");
+        }
+    }
+    """
 
-		# out_bom[prefix][package][value] -> [devices]
-		out_bom = dict()
-		with open(os.path.join(self.ulp_dir, "bom.json"), 'r') as bom:
-			bom = json.load(bom)
-			for bom_path in self.bom_path:
-				for part in bom['items']:
-					prefix, package, value = part['prefix'], part['package'], part['value']
-					out_bom.setdefault(prefix, dict()).setdefault(package, dict()).setdefault(value, list()).append(part)
+    def generate_bom_output(self):
+        # out_bom[prefix][package][value] -> [devices]
+        with open(os.path.join(self.ulp_dir, "bom.json"), 'r') as bom:
+            bom = json.load(bom)
+            out_bom = dict()
 
-				if '.json' in bom_path:
-					with open(bom_path, 'w') as out:
-						out.write(json.dumps(out_bom))
+            for part in bom['items']:
+                prefix, package, value = part['prefix'], part['package'], part['value']
+                out_bom.setdefault(prefix, dict()).setdefault(package, dict()).setdefault(value, list()).append(part)
 
-				elif '.csv' in bom_path:
-					with open(bom_path, 'w') as csvfile:
-						bom_writer = csv.writer(csvfile, dialect='excel', delimiter='	', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-						bom_writer.writerow(['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description'])
-						# d[<prefix>][<package>][<value>][1]
-						for prefix, packages in out_bom.items():
-							for package, items in packages.items():
-								for value, devices in items.items():
-									range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
-									row = [prefix,
-											package,
-											value,
-											len(devices),
-											",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list]),
-											devices[0]['description']]
-									bom_writer.writerow(row)
+            with BOMWriter(self.bom_path) as bom_writer:
+                # Write header
+                bom_writer.writerow(['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description'], header=True)
 
-				elif '.xlsx' in bom_path:
-					try:
-						from xlsxwriter.workbook import Workbook
-					except ImportError:
-						log.error("Please install xlsxwriter: `pip install xlsxwriter`")
-						sys.exit(2)
-					try:
-						workbook = Workbook(bom_path)
-						title = workbook.add_format({'bold': True, 'bg_color': 'gray'})
-						bom_writer = workbook.add_worksheet()
-						bom_writer.set_column(0, 0, 4.50)
-						bom_writer.set_column(1, 1, 14.50)
-						bom_writer.set_column(2, 2, 16)
-						bom_writer.set_column(3, 3, 2)
-						bom_writer.set_column(4, 5, 50.00)
-						keys = ['Prefix', 'Packaging', 'Value', 'Nb', 'Devices', 'Description']
-						for c, key in enumerate(keys):
-							bom_writer.write_string(0, c, key, title)
-							row_idx =1
-							for prefix, packages in out_bom.items():
-								for package, items in packages.items():
-									for value, devices in items.items():
-										range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
-										range_list = ",".join(["{}-{}".format(x,y) if x != y else str(x) for x,y in range_list])
-										bom_writer.write(row_idx, 0, prefix)
-										bom_writer.write(row_idx, 1, package)
-										bom_writer.write(row_idx, 2, value)
-										bom_writer.write(row_idx, 3, str(len(devices)))
-										bom_writer.write(row_idx, 4, range_list)
-										bom_writer.write(row_idx, 5, devices[0]['description'])
-										row_idx += 1
-					finally:
-						workbook.close()
-				elif '.xls' in bom_path:
-					log.error("TODO xls support!")
-				log.info("BOM generated into {}".format(bom_path))
+                # Write each bom line
+                for prefix, packages in out_bom.items():
+                    print(prefix)
+                    for package, items in packages.items():
+                        print(prefix, package)
+                        for value, devices in items.items():
+                            print(prefix, package, value, devices)
+                            range_list = ranges([int(re.sub(r'[a-zA-Z]*', r'', d['designator'])) for d in devices])
+                            row = [prefix,
+                                    package,
+                                    value,
+                                    len(devices),
+                                    ",".join(["{}-{}".format(x, y) if x != y else str(x) for x, y in range_list]),
+                                    devices[0]['description']]
+                            bom_writer.writerow(row)
 
-	def write_script(self, extension, layers, out_paths):
-		if extension != 'sch':
-			raise BadExtension
+    def write_script(self, extension, layers, out_paths):
+        if extension != 'sch':
+            raise BadExtension
 
-		self.ulp_dir = self.workdir or tempfile.mkdtemp()
-		self.ulp_path = os.path.join(self.ulp_dir, "bom.ulp")
+        self.ulp_dir = self.workdir or tempfile.mkdtemp()
+        self.ulp_path = os.path.join(self.ulp_dir, "bom.ulp")
 
-		ulp = open(self.ulp_path, "w")
-		ulp.write(self.ULP_TEMPLATE_HEAD)
+        ulp = open(self.ulp_path, "w")
+        ulp.write(self.ULP_TEMPLATE_HEAD)
 
-		self.bom_path = []
-		for layer, out_path in zip(layers, out_paths):
-			self.bom_path.append(out_path)
+        self.bom_path = []
+        for layer, out_path in zip(layers, out_paths):
+            self.bom_path.append(out_path)
 
-		assert '"' not in out_path
-		ulp.write(self.ULP_TEMPLATE % {
-			'out_path': os.path.join(self.ulp_dir, "bom.json"),
-		})
+        assert '"' not in out_path
+        ulp.write(self.ULP_TEMPLATE % {
+            'out_path': os.path.join(self.ulp_dir, "bom.json"),
+        })
 
-		ulp.write(self.ULP_TEMPLATE_TAIL)
-		ulp.close()
+        ulp.write(self.ULP_TEMPLATE_TAIL)
+        ulp.close()
 
-		log.debug("Script path: {}".format(self.ulp_path))
-		log.debug("Raw bom output in {}".format(os.path.join(self.ulp_dir, "bom.json")))
+        log.debug("Script path: {}".format(self.ulp_path))
+        log.debug("Raw bom output in {}".format(os.path.join(self.ulp_dir, "bom.json")))
 
-		return [
-			"DISPLAY ALL",
-			"RUN %s" % (self.ulp_path,)
-		]
+        return [
+            "DISPLAY ALL",
+            "RUN %s" % (self.ulp_path,)
+        ]
 
-	def clean(self):
-		self.collapse_bom()
-		os.unlink(os.path.join(self.ulp_dir, "bom.json"))
-		os.unlink(self.ulp_path)
-		if not self.workdir:
-			os.rmdir(self.ulp_dir)
+    def clean(self):
+        self.generate_bom_output()
+        os.unlink(os.path.join(self.ulp_dir, "bom.json"))
+        os.unlink(self.ulp_path)
+        if not self.workdir:
+            os.rmdir(self.ulp_dir)
+
+
+class PyEagleBOMExport(PyEagleExport):
+    def export(self, in_path, layers, out_paths):
+        db = PartDatabase(config.partdb)
+        with BOMWriter(out_paths) as writer:
+            # header row
+            writer.writerow(('Item', 'Partnum', 'Qty', 'Fit', 'Manufacturer', 'Reference', 'Description', 'RefDes'), header=True)
+
+            for i, part_line in enumerate(sorted(db.build_bom(in_path), key=lambda p: p['Partnum'])):
+                writer.writerow((str(i+1),) + tuple(part_line.get_line(['Partnum',
+                                                                        'Quantity',
+                                                                        'Fitted',
+                                                                        'Manufacturer',
+                                                                        'Reference',
+                                                                        'Description',
+                                                                        'RefDes'], range=True)
+                                                    )
+                                )
+
+        log.info("Successfully wrote BOM into {}".format(", ".join(out_paths)))
+
+
+class EagleBOMExport():
+    def __init__(self, workdir=None, verbose=False):
+        self.workdir = workdir
+        self.verbose = verbose
+        self._py_export = PyEagleBOMExport(workdir, verbose)
+        self._ea_export = EagleScriptBOMExport(workdir, verbose)
+
+    def export(self, *args, **kwarg):
+        try:
+            self._py_export.export(*args, **kwarg)
+        except Exception as err:
+            log.warn(err)
+            self._ea_export.export(*args, **kwarg)
+
+    def clean(self):
+        pass
 
 
 out_types['bom'] = EagleBOMExport
+out_types['py_bom'] = PyEagleBOMExport
+out_types['old_bom'] = EagleScriptBOMExport
 
 
 class EagleDirectoryExport(EagleScriptExport):
