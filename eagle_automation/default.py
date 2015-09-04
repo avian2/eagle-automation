@@ -104,3 +104,6 @@ class Config:
 # General OS-wide open file utility
     OPEN = open_bin
 
+# Default component attribute for component db
+    PARTNUM = '#PARTNUM'
+

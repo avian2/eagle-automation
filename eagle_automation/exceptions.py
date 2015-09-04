@@ -9,4 +9,6 @@ class BadExtension(Exception):
     pass
 
 
+class DatabaseInvalid(Exception):
+    pass
 

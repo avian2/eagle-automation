@@ -4,52 +4,16 @@
 {base}, Manage Components Library and Database with Eagle Files
 Copyright (C) 2015  Bernard Pratz <guyzmo+pea@m0g.net>
 
-Usage: {base} {command} <command>
-
-### db file management
-
-% pea db list -category Capacitor
-200001: ABC
-200002: DEF
-% pea db show 200001
-200001:
- Category: Capacitor
- Description: ABC
- Alternatives:
-  #1. Manufacturer: any, Reference: any, Status: Active (Preferred)
-  #2. Manufacturer: Wurth, Reference: ABC, Status: Active
-  #3. Manufacturer: Vishay, Reference: DEF, Status: Active
-% pea db insert 900000 --status=active --category=IC --manufacturer=TI --reference=1G17
-Added to position #3 of item 900000 alternatives:
-  #1. Manufacturer: TI, Reference: ABC, Status: Active (Preferred)
-  #2. Manufacturer: NXP, Reference: DF, Status: Active
-  #3. Manufacturer: TI, Reference: 1G17, Status: Active
-% pea db alternative 900000 preferred 3
-Preferred changed to #3 of 900000's alternatives. Alternatives list updated:
-  #1. Manufacturer: TI, Reference: 1G17, Status: Active (Preferred)
-  #2. Manufacturer: TI, Reference: ABC, Status: Active
-  #3. Manufacturer: NXP, Reference: DF, Status: Active
-% pea db alternative 900000 delete 3
-Removed #3 from 900000 alternatives. Alternatives list updated:
-  #1. Manufacturer: TI, Reference: 1G17, Status: Active (Preferred)
-  #2. Manufacturer: TI, Reference: ABC, Status: Active
-
-###
-
-Commands:
-    library
-    db
-
-Options:
-    <input>               .brd, .sch or .lbr file to extract data from
-    <type>                chosen output type
-    <output>              filename to export data to
-    <layer>               loyer to export data from, linked with the output file
-
-<type> can be any of:
-    {types}
-    <layer> can be any of:
-        {layers}
+Usage:
+    {base} {command} ls [--category=<category>]
+    {base} {command} show <component>
+    {base} {command} insert <component> --category=<category> --description=<description>
+    {base} {command} alt <component> list
+    {base} {command} alt <component> append <item> --status=<status> --category=<category> --manufacturer=<manufacturer> --reference=<reference> --description=<description>
+    {base} {command} alt <component> modify <item> [--status=<status>] [--category=<category>] [--manufacturer=<manufacturer>] [--reference=<reference>] [--description=<description>]
+    {base} {command} alt <component> preferred <item>
+    {base} {command} alt <component> delete <item>
+    {base} {command} alt <component> move <item> <position>
 
 """
 
@@ -60,13 +24,13 @@ import docopt
 import pyeagle
 import itertools
 
+from .config import config
+from .exceptions import DatabaseInvalid
 
 import logging
 log = logging.getLogger('pea').getChild(__name__)
 
 ################################################################################
-
-PARTNUM = '#PARTNUM'
 
 
 class PartLine(dict):
@@ -140,13 +104,13 @@ class PartDatabase(dict):
     def validate_db(self):
         for item, data in self.items():
             if not (set(data.keys()) == PartDatabase.KEYS or set(data.keys()+['Alternatives']) == PartDatabase.KEYS):
-                raise Exception("Item '{}' has inconsistent keys, got: '{}' want: '{}'".format(
+                raise DatabaseInvalid("Item '{}' has inconsistent keys, got: '{}' want: '{}'".format(
                     item,
                     repr(data.keys()),
                     repr(PartDatabase.KEYS))
                 )
             if set(data['Preferred'].keys()) != PartDatabase.PART_KEYS:
-                raise Exception("Preferred alternative has inconsistent keys, got: '{}' want: '{}'".format(
+                raise DatabaseInvalid("Preferred alternative has inconsistent keys, got: '{}' want: '{}'".format(
                     item,
                     repr(data['Preferred'].keys()),
                     repr(PartDatabase.PART_KEYS))
@@ -154,23 +118,25 @@ class PartDatabase(dict):
             if 'Alternatives' in data.keys() and data['Alternatives']:
                 for i, part in enumerate(data['Alternatives']):
                     if set(part.keys()) != PartDatabase.PART_KEYS:
-                        raise Exception("Item #{} of '{}' alternatives has inconsistent keys, got: '{}' want: '{}'".format(
+                        raise DatabaseInvalid("Item #{} of '{}' alternatives has inconsistent keys, got: '{}' want: '{}'".format(
                             i,
                             item,
                             repr(part.keys()),
                             repr(PartDatabase.PART_KEYS))
                         )
 
+    """BOM building"""
+
     def get_part_line(self, part, attr_dict):
-        if PARTNUM in attr_dict.keys() and attr_dict[PARTNUM] in self.keys():
-            part_line = PartLine(**self[attr_dict[PARTNUM]]['Preferred'])
+        if config.PARTNUM in attr_dict.keys() and attr_dict[config.PARTNUM] in self.keys():
+            part_line = PartLine(**self[attr_dict[config.PARTNUM]]['Preferred'])
             part_line.update({
-                'Partnum': attr_dict[PARTNUM],
+                'Partnum': attr_dict[config.PARTNUM],
                 'Fitted': True,
                 'Package': part.device.package.name,
                 'Value': part.value,
                 'Device': part.device_set.name,
-                'Description': self[attr_dict[PARTNUM]]['Description']
+                'Description': self[attr_dict[config.PARTNUM]]['Description']
             })
         else:
             part_line = PartLine(**{
@@ -198,6 +164,183 @@ class PartDatabase(dict):
 
         return parts.values()
 
+    """list items"""
+
+    def get_categories(self):
+        return set([part['Category'] for item, part in self.items()])
+
+    def get_parts_from_category(self, cat):
+        return filter(lambda p: p[1]['Category'] == cat, self.items())
+
+    def get_parts_groupby_category(self):
+        def cat_key(x): return x[1]['Category']
+
+        return itertools.groupby(sorted(self.items(),
+                                        key=cat_key),
+                                 key=cat_key)
+
+
+################################################################################
+
+class Commands:
+    registered_command = dict()
+
+    @classmethod
+    def register(cls, *args, **kwarg):
+        def wrapper(klass):
+            for command in args:
+                cls.registered_command[command] = klass
+            return klass
+        return wrapper
+
+
+class ComponentDatabase:
+    def __init__(self, db, verbose=False):
+        self.db = db
+        self.verbose = verbose
+
+
+@Commands.register('show')
+class ComponentShow(ComponentDatabase):
+    """
+    % pea db show 200001
+    200001:
+     Category: Capacitor
+     Description: ABC
+     Alternatives:
+      #1. Manufacturer: any, Reference: any, Status: Active (Preferred)
+      #2. Manufacturer: Wurth, Reference: ABC, Status: Active
+      #3. Manufacturer: Vishay, Reference: DEF, Status: Active
+    """
+    @classmethod
+    def print_alternatives(cls, component):
+        if component['Preferred']:
+            print(
+                "    #1. Manufacturer: {Manufacturer}, Reference: {Reference}, Status: {Status} (Preferred)".format(**component['Preferred'])
+            )
+        if component['Alternatives']:
+            for i, alt in enumerate(component['Alternatives']):
+                print(
+                    "    #{}. Manufacturer: {Manufacturer}, Reference: {Reference}, Status: {Status}".format(i+2, **alt)
+                )
+
+    def show(self, name, component):
+        print(
+            "{}:\n"
+            "  Category: {Category}\n"
+            "  Description: {Description}\n"
+            "  Alternatives:"
+            "".format(name, **component)
+        )
+
+    def run(self, args):
+        try:
+            self.show(args['<component>'], self.db[args['<component>']])
+        except KeyError:
+            log.error('Could not find component: {}'.format(args['<component>']))
+
+
+@Commands.register('ls')
+class ComponentList(ComponentDatabase):
+    @classmethod
+    def print_parts_list(cls, parts):
+        for item, part in sorted(parts, key=lambda x: x[0]):
+            print(u'  {:<15}: {:<35} ({}, {} alternative{})'.format(
+                item,
+                part['Description'],
+                part['Category'],
+                len(part['Alternatives'])+1,
+                's' if len(part['Alternatives'])+1 > 1 else ''
+            ))
+
+    def run(self, args):
+        if args['--category']:
+            if args['--category'] not in self.db.get_categories():
+                log.error('Category "{}" does not exists.'.format(args['--category']))
+                print('Here\'s the list of defined categories:')
+                for cat in self.db.get_categories():
+                    print(' - {}'.format(cat))
+            else:
+                self.print_parts_list(self.db.get_parts_from_category(args['--category']))
+        else:
+            for category, parts in self.db.get_parts_groupby_category():
+                print('{}:'.format(category))
+                self.print_parts_list(parts)
+
+
+@Commands.register('insert')
+class ComponentInsert(ComponentDatabase):
+    """
+    % pea db insert 900000 --category=IC --description=Foo bar
+    Successfully added to category IC
+    """
+    def run(self, args):
+        new_comp = dict(
+            Category=args['--category'],
+            Description=args['--description'],
+            Preferred=[],
+            Alternatives=[],
+        )
+        if args['<component>'] not in self.db.keys():
+            self.db[args['<component>']] = new_comp
+            print("Successfully added {} to category {Category}".format(args['<component>'], **new_comp))
+
+
+@Commands.register('alt')
+class ComponentAlternative(ComponentDatabase):
+    def list(self, component):
+        print("Alternatives for component {}".format(component))
+        ComponentShow.print_alternatives(self.db[component])
+
+    def append(self, component, alt):
+        if not self.db[component]:
+            self.db[component]['Preferred'] = alt
+        else:
+            self.db[component]['Alternatives'].append(alt)
+        self.db.save()
+        # show result
+        print('Successfully added to position #{} of item {} alternatives:'.format(
+            len(self.db[component]['Alternatives']),
+            component
+        ))
+        ComponentShow.list(component)
+
+    def delete(self, component, item):
+        print('Removed #{} from {} alternatives. Alternatives list updated:'.format(item, component))
+        self.list(component)
+        # TODO
+
+    def preferred(self, component, item):
+        print('Preferred changed to #{} of {}\'s alternatives. Alternatives list updated:'.format(item, component))
+        self.list(component)
+        # TODO
+
+    def move(self, component, item, position):
+        print('Alternative #{} move to position #{} of {}. Alternatives list updated:'.format(item, position, component))
+        self.list(component)
+        # TODO
+
+    def modify(self, component, item):
+        print('Modified alternative #{} of {}. Alternatives list updated:'.format(item, component))
+        self.list(component)
+        # TODO
+
+    def run(self, args):
+        if args['append']:
+            self.insert(args['<component>'], {
+                'Reference': args['--reference'],
+                'Manufacturer': args['--manufacturer'],
+                'Status': args['--status']
+            })
+        elif args['list']:
+            self.list(args['<component>'])
+        elif args['delete']:
+            self.delete(args['<component>'], args['<item>'])
+        elif args['preferred']:
+            self.preferred(args['<component>'], args['<item>'])
+        elif args['move']:
+            self.preferred(args['<component>'], args['<item>'], args['<position>'])
+
 
 ################################################################################
 
@@ -206,7 +349,23 @@ def components_main(verbose=False):
         base=sys.argv[0],
         command=sys.argv[1],
     ))
+    del args[sys.argv[1]]
 
     log.debug("Arguments:\n{}".format(repr(args)))
 
-    raise Exception("TODO")
+    partsdb = PartDatabase(config.partdb)
+
+    command = None
+    for arg in filter(lambda a: not a[0] in ('-', '<'), args.items()):
+        if arg[1] and arg[0] in Commands.registered_command.keys():
+            command = arg[0]
+            break
+
+    try:
+        cdb = Commands.registered_command[command]
+    except KeyError:
+        log.error("Unknown subcommand: " + Commands.registered_command[command])
+        log.error("Use --help to look up usage.")
+        sys.exit(1)
+
+    cdb(db=partsdb, verbose=verbose).run(args)
