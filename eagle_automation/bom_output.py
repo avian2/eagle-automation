@@ -118,7 +118,7 @@ class YAMLWriter(BOMWriterBase):
             with open(self.fname, 'w') as f:
                 f.write(yaml.dump(self.lines))
         except ImportError:
-            raise Exception("Please install yaml: `pip install pyyaml`")
+            raise ImportError("Please install yaml: `pip install pyyaml`")
 
 
 @BOMWriter.register('.xlsx')
@@ -127,7 +127,7 @@ class XLSXWriter(BOMWriterBase):
         try:
             from xlsxwriter.workbook import Workbook
         except ImportError:
-            raise Exception("Please install xlsxwriter: `pip install xlsxwriter`")
+            raise ImportError("Please install xlsxwriter: `pip install xlsxwriter`")
         self.workbook = Workbook(self.fname)
         self.title_format = self.workbook.add_format({'bold': True, 'bg_color': '#999999'})
         self.alter_format = self.workbook.add_format({'bg_color': '#dddddd'})
@@ -163,7 +163,7 @@ class ODSWriter(CSVWriter):
         try:
             import odswriter as ods
         except ImportError:
-            raise Exception("Please install odswriter: `pip install odswriter`")
+            raise ImportError("Please install odswriter: `pip install odswriter`")
         self.writer = ods.writer(self.f)
         self.unicode_support = True
 
