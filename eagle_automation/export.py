@@ -38,7 +38,7 @@ import logging
 log = logging.getLogger('pea').getChild(__name__)
 
 
-class EagleExport:
+class Commands:
     registered_command = dict()
 
     @classmethod
@@ -101,7 +101,7 @@ class EagleScriptExport:
         pass
 
 
-@EagleExport.register('png')
+@Commands.register('png')
 class EaglePNGExport(EagleScriptExport):
     _page = 1
 
@@ -136,7 +136,7 @@ class EaglePNGExport(EagleScriptExport):
         return script
 
 
-@EagleExport.register('old_bom')
+@Commands.register('old_bom')
 class EagleScriptBOMExport(EagleScriptExport):
     ULP_TEMPLATE_HEAD = ""
     ULP_TEMPLATE_TAIL = ""
@@ -238,7 +238,7 @@ class EagleScriptBOMExport(EagleScriptExport):
             os.rmdir(self.ulp_dir)
 
 
-@EagleExport.register('py_bom')
+@Commands.register('py_bom')
 class PyEagleBOMExport(PyEagleExport):
     def export(self, in_path, layers, out_paths):
         db = PartDatabase(config.partdb)
@@ -260,7 +260,7 @@ class PyEagleBOMExport(PyEagleExport):
         log.info("Successfully wrote BOM into {}".format(", ".join(out_paths)))
 
 
-@EagleExport.register('bom')
+@Commands.register('bom')
 class EagleBOMExport():
     def __init__(self, workdir=None, verbose=False):
         self.workdir = workdir
@@ -291,7 +291,7 @@ class EagleDirectoryExport(EagleScriptExport):
         return script
 
 
-@EagleExport.register('pdf')
+@Commands.register('pdf')
 class EaglePDFExport(EagleScriptExport):
     def write_script(self, extension, layers, out_paths):
 
@@ -318,7 +318,7 @@ class EaglePDFExport(EagleScriptExport):
         return script
 
 
-@EagleExport.register('mountsmd')
+@Commands.register('mountsmd')
 class EagleMountSMDExport(EagleScriptExport):
 
     # Following ULP code based on "mountsmd.ulp" by CadSoft
@@ -422,12 +422,12 @@ class EagleCAMExport:
                 subprocess.call(cmd)
 
 
-@EagleExport.register('gerber')
+@Commands.register('gerber')
 class EagleGerberExport(EagleCAMExport):
     DEVICE = "GERBER_RS274X"
 
 
-@EagleExport.register('excellon')
+@Commands.register('excellon')
 class EagleExcellonExport(EagleCAMExport):
     DEVICE = "EXCELLON"
 
@@ -438,7 +438,7 @@ def export_main(verbose=False):
     args = docopt.docopt(__doc__.format(
         base=sys.argv[0],
         command=sys.argv[1],
-        types=', '.join(EagleExport.registered_command.keys()),
+        types=', '.join(Commands.registered_command.keys()),
         layers=', '.join(config.LAYERS.keys())
     ))
 
@@ -474,9 +474,9 @@ def export_main(verbose=False):
         out_paths.append(out_path)
 
     try:
-        export_class = EagleExport.registered_command[args['<type>']]
+        export_class = Commands.registered_command[args['<type>']]
     except KeyError:
-        log.error("Unknown type: " + EagleExport.registered_command[args['<type>']])
+        log.error("Unknown subcommand: " + Commands.registered_command[args['<type>']])
         log.error("Use --help to look up usage.")
         sys.exit(1)
 

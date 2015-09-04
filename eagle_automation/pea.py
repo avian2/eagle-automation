@@ -47,15 +47,19 @@ import pkg_resources  # part of setuptools
 import sys
 import docopt
 import logging
+import subprocess
 log = logging.getLogger('pea')
 
-import eagle_automation.config as config
+from . import config
+
+from .exceptions import FileNotFoundError
 
 __version__ = pkg_resources.require("eagle_automation")[0].version
 
-def main():
+
+def main(): # noqa
     args = docopt.docopt(__doc__.format(base=sys.argv[0], version=__version__),
-                  version = __version__,
+                  version=__version__,
                   options_first=True)
 
     if args['--verbose']:
@@ -90,10 +94,13 @@ def main():
     elif args['<command>'] == 'diff':
         import eagle_automation.diff
         return eagle_automation.diff.diff_main(verbose=args['--verbose'])
+    elif args['<command>'] == 'db':
+        import eagle_automation.components
+        return eagle_automation.components.components_main(verbose=args['--verbose'])
     elif args['<command>'] in ['help', None]:
-        exit(call(['python', sys.argv[0], '--help']))
+        sys.exit(subprocess.call(['python', sys.argv[0], '--help']))
     else:
-        exit("{} is not a {base} command. See '{base} help'.".format(args['<command>'], base=sys.argv[0]))
+        sys.exit("{} is not a {base} command. See '{base} help'.".format(args['<command>'], base=sys.argv[0]))
 
 
 if __name__ == "__main__":
