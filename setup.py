@@ -37,6 +37,10 @@ else:
         long_description=open('README.md', 'r').read(),
     ))
 
+install_requirements = []
+if sys.version_info.major == 2:
+    install_requirements += ['unicodecsv']
+
 setup(
 	name='eagle_automation',
 	version='0.1.12',
@@ -56,12 +60,15 @@ setup(
 		'Operating System :: Unix',
 	],
 	install_requires=[
+		'pyeagle',
+		'odswriter',
+		'XlsxWriter',
 		'PyPDF2',
 		'PyYAML',
 		'pillow',
 		'docopt',
 		'setuptools',
-	],
+	]+install_requirements,
 	entry_points="""
 	# -*- Entry points: -*-
 	[console_scripts]
