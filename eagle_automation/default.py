@@ -6,7 +6,7 @@ import glob
 if 'darwin' == sys.platform:
     eagle_bin = glob.glob('/Applications/EAGLE*/EAGLE.app/Contents/MacOS/EAGLE')[-1]
     open_bin = '/usr/bin/open'
-elif 'linux' == sys.platform:
+elif sys.platform.startswith('linux'):
     eagle_bin = glob.glob('/usr/local/eagle*/bin/eagle')[-1]
     open_bin = '/usr/bin/xdg-open'
 elif 'win32' == sys.platform:
