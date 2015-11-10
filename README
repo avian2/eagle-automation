@@ -7,6 +7,10 @@ development a bit more convenient for anyone that is used to the procedures
 usually employed by open source software projects (for example using source
 control tools and one-step builds).
 
+Note these scripts have only been tested using Eagle 5.11.0. If you are using a
+newer version of Eagle, you might want to try Guyzmo's largely refactored and
+updated fork at https://github.com/guyzmo/eagle-automation
+
 This repository currently contains the following:
 
 eaglediff     - Commandline diff tool for schematics, board layouts and
@@ -40,8 +44,6 @@ Run:
 
 $ python setup.py install
 $ git config --global --add difftool.eaglediff.cmd 'eaglediff $LOCAL $REMOTE'
-
-Note these scripts have only been tested using Eagle 5.11.0.
 
 
 
