@@ -3,15 +3,25 @@
 import sys
 import glob
 
+def glob_or_none(glob_path):
+	paths = glob.glob(glob_path)
+	if paths:
+		return paths[-1]
+	else:
+		return None
+
 if 'darwin' == sys.platform:
-    eagle_bin = glob.glob('/Applications/EAGLE*/EAGLE.app/Contents/MacOS/EAGLE')[-1]
+    eagle_bin = glob_or_none('/Applications/EAGLE*/EAGLE.app/Contents/MacOS/EAGLE')
     open_bin = '/usr/bin/open'
 elif sys.platform.startswith('linux'):
-    eagle_bin = glob.glob('/usr/local/eagle*/bin/eagle')[-1]
+    eagle_bin = glob_or_none('/usr/local/eagle*/bin/eagle')
     open_bin = '/usr/bin/xdg-open'
 elif 'win32' == sys.platform:
     eagle_bin = 'c:/program files/EAGLE*/eagle.exe'
     open_bin = 'start'
+else:
+    eagle_bin = None
+    open_bin = None
 
 # LAYERS dictionary provides mapping between Eagle layers and export layers (as
 # used by "eagleexport").
